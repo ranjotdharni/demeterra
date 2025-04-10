@@ -1,9 +1,11 @@
 
-const API_LOGIN: string = "/api/login"
+export const API_LOGIN: string = "/api/login"
 
-const PAGE_LOGIN: string = "/login"
+export const PAGE_LOGIN: string = "/login"
+export const PAGE_LANDING: string ="/"
 
-const PUBLIC_ROUTES: string[] = [
+export const PUBLIC_ROUTES: string[] = [
     API_LOGIN,
+    PAGE_LANDING,
     PAGE_LOGIN,
 ]
