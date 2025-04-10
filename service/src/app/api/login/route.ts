@@ -4,6 +4,7 @@ import { dbCreateSession } from "@/db/actions"
 import { newError } from "@/lib/utils/general"
 import { Session } from "@/lib/types/db"
 import { cookies } from "next/headers"
+import { compare } from "bcrypt"
 
 
 export async function POST(request: NextRequest) {
@@ -12,8 +13,14 @@ export async function POST(request: NextRequest) {
 
     const data = await request.json()
 
-    if (data.username === undefined)
-        return NextResponse.json({ error: true, message: "MALFORMED REQUEST" } as GenericError, { status: 401 })
+    if (data.username === undefined || data.key === undefined)
+        return NextResponse.json({ error: true, message: "MALFORMED REQUEST" } as GenericError, { status: 400 })
+
+    const authorized: boolean = await compare(data.key, process.env.SERVICE_KEY!)
+
+    if (!authorized) {
+        return NextResponse.json({ error: true, message: "UNAUTHORIZED" } as GenericError, { status: 401 })
+    }
 
     const result = await dbCreateSession(data.username)
 
