@@ -1,3 +1,4 @@
+import { createConnection } from "mysql2/promise"
 
 export interface DBConfig {
     host: string
@@ -14,3 +15,5 @@ export const dbConfig: DBConfig = {
     database: process.env.DB_NAME!,
     port: +process.env.DB_PORT!
 }
+
+export const conn = await createConnection(dbConfig)
