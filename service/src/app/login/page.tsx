@@ -48,11 +48,11 @@ export default function Page() {
     }
 
     return (
-        <section className="p-8">
-            <form onSubmit={onSubmit} className="w-auto h-auto flex flex-col justify-start items-start space-y-4">
+        <section className="p-8 w-screen h-screen flex flex-col justify-center items-center">
+            <form onSubmit={onSubmit} className="w-auto h-auto p-8 border border-light-grey shadow-xl flex flex-col justify-start items-end space-y-8">
                 <input value={username} onChange={editUsername} placeholder="Enter Username" className="w-auto bg-gray-400 text-black" />
                 <input type="password" value={serviceKey} onChange={editServiceKey} placeholder="Enter Service Key" className="w-auto bg-gray-400 text-black" />
-                <button type="submit" className="bg-gray-400 text-black hover:cursor-pointer p-2">Login</button>
+                <button type="submit" className="hover:cursor-pointer py-2 px-4 text-foreground border border-light-grey rounded-lg">Login</button>
                 <p className="text-red-700">{error}</p>
             </form>
         </section>

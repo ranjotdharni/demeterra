@@ -3,11 +3,13 @@
 :root {
   --background: #cccccc;
   --foreground: #292929;
+  --light-grey: #6d6666;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-light-grey: var(--light-grey);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -16,6 +18,7 @@
   :root {
     --background: #292929;
     --foreground: #cccccc;
+    --light-grey: #6d6666;
   }
 }
 
@@ -23,4 +26,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+input {
+  outline: none;
 }

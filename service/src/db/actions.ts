@@ -1,7 +1,7 @@
 import { createConnection, FieldPacket, QueryError, QueryResult } from "mysql2/promise"
+import { Session, Location } from "@/lib/types/db"
 import { GenericError } from "@/lib/types/general"
 import { newError } from "@/lib/utils/general"
-import { Session } from "@/lib/types/db"
 import { v4 as uuidv4 } from "uuid"
 import { dbConfig } from "./config"
 
@@ -64,5 +64,59 @@ export async function dbGetSession(username: string, token: string): Promise<Ses
     catch (error) {
         console.log(error)
         return newError("Failed to Retrieve Session")
+    }
+}
+
+export async function dbGetLocations(): Promise<Location[] | GenericError> {
+    const conn = await createConnection(dbConfig)
+
+    try {
+        let query: string = "SELECT * FROM Location ORDER BY dateCreated ASC"
+        let response: [QueryResult, FieldPacket[]] | QueryError = await conn.execute<Location[]>(query)
+
+        if (((response as unknown) as QueryError).code !== undefined) {
+            console.log(response)
+            return newError("Failed to Retrieve Locations")
+        }
+
+        conn.end()
+        return response[0] as Location[]
+    }
+    catch (error) {
+        console.log(error)
+        return newError("Failed to Retrieve Locations")
+    }
+}
+
+export async function dbAddLocation(name: string): Promise<Location[] | GenericError> {
+    const conn = await createConnection(dbConfig)
+
+    try {
+        const locationId: string = uuidv4()
+
+        let query: string = "INSERT INTO Location (locationId, name) VALUES (?, ?)"
+        let params: (string | number)[] = [locationId, name]
+        let response: [QueryResult, FieldPacket[]] | QueryError = await conn.execute<QueryResult>(query, params)
+
+        if (((response as unknown) as QueryError).code !== undefined) {
+            console.log(response)
+            return newError("Failed to Add Location")
+        }
+
+        query = "SELECT * FROM Location WHERE locationId = ?"
+        params = [locationId]
+        response = await conn.execute<Location[]>(query, params)
+
+        if (((response as unknown) as QueryError).code !== undefined) {
+            console.log(response)
+            return newError("Failed to Retrieve Location after adding")
+        }
+
+        conn.end()
+        return response[0] as Location[]
+    }
+    catch (error) {
+        console.log(error)
+        return newError("Failed to Add Location")
     }
 }

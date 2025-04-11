@@ -5,3 +5,9 @@ export interface Session extends RowDataPacket {
     token: string
     expiresAt: Date
 }
+
+export interface Location extends RowDataPacket {
+    locationId: string
+    name: string
+    dateCreated: Date
+}
