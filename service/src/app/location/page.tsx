@@ -1,6 +1,6 @@
 "use client"
 
-import { API_LOCATION, PAGE_LOCATION } from "@/lib/constants/routes"
+import { API_LOCATION, PAGE_JOB } from "@/lib/constants/routes"
 import { useEffect, useState } from "react"
 import { Location } from "@/lib/types/db"
 
@@ -52,7 +52,7 @@ export default function Page() {
                         return (
                             <li key={location.locationId} className="w-auto h-auto px-4 py-2 border border-light-grey rounded-lg flex flex-row items-center space-x-2">
                                 <h2 className="text-2xl">{location.name}</h2>
-                                <a href={`${PAGE_LOCATION}/${location.locationId}`} className="hover:cursor-pointer py-1 px-4 text-foreground border border-light-grey rounded-lg">View</a>
+                                <a href={`${PAGE_JOB}/${location.locationId}`} className="hover:cursor-pointer py-1 px-4 text-foreground border border-light-grey rounded-lg">View</a>
                                 <button className="hover:cursor-pointer py-1 px-4 text-foreground border border-light-grey rounded-lg">Delete</button>
                             </li>
                         )

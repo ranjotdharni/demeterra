@@ -1,10 +1,12 @@
-import { createConnection, FieldPacket, QueryError, QueryResult } from "mysql2/promise"
-import { Session, Location, Employee } from "@/lib/types/db"
-import { GenericError } from "@/lib/types/general"
-import { newError } from "@/lib/utils/general"
+import { Connection, createConnection, FieldPacket, QueryError, QueryResult } from "mysql2/promise"
+import { GenericError, GenericSuccess } from "@/lib/types/general"
+import { Session, Location, Employee, Job, JobSummary, RawJobSummary } from "@/lib/types/db"
+import { newError, newSuccess, parseRawJobSummaries } from "@/lib/utils/general"
+import { dateToSQLDate } from "@/lib/utils/db"
 import { v4 as uuidv4 } from "uuid"
-import { dbConfig } from "./config"
+import { conn, dbConfig } from "./config"
 
+// Sessions
 export async function dbCreateSession(username: string): Promise<Session[] | GenericError> {
     const conn = await createConnection(dbConfig)
 
@@ -67,6 +69,7 @@ export async function dbGetSession(username: string, token: string): Promise<Ses
     }
 }
 
+// Locations
 export async function dbGetLocations(): Promise<Location[] | GenericError> {
     const conn = await createConnection(dbConfig)
 
@@ -85,6 +88,28 @@ export async function dbGetLocations(): Promise<Location[] | GenericError> {
     catch (error) {
         console.log(error)
         return newError("Failed to Retrieve Locations")
+    }
+}
+
+export async function dbGetLocationById(locationId: string): Promise<Location[] | GenericError> {
+    const conn = await createConnection(dbConfig)
+
+    try {
+        let query: string = "SELECT * FROM Location WHERE locationId = ?"
+        let params: (string | number)[] = [locationId]
+        let response: [QueryResult, FieldPacket[]] | QueryError = await conn.execute<Location[]>(query, params)
+
+        if (((response as unknown) as QueryError).code !== undefined) {
+            console.log(response)
+            return newError("Failed to Retrieve Location by ID")
+        }
+
+        conn.end()
+        return response[0] as Location[]
+    }
+    catch (error) {
+        console.log(error)
+        return newError("Failed to Retrieve Location by ID")
     }
 }
 
@@ -121,6 +146,7 @@ export async function dbAddLocation(name: string): Promise<Location[] | GenericE
     }
 }
 
+// Employees
 export async function dbGetEmployees(): Promise<Employee[] | GenericError> {
     const conn = await createConnection(dbConfig)
 
@@ -172,5 +198,188 @@ export async function dbAddEmployee(name: string): Promise<Employee[] | GenericE
     catch (error) {
         console.log(error)
         return newError("Failed to Add Employee")
+    }
+}
+
+// Jobs
+export async function dbGetJobsByLocation(locationId: string): Promise<Job[] | GenericError> {
+    const conn = await createConnection(dbConfig)
+
+    try {
+        let query: string = "SELECT * FROM Job WHERE locationId = ?"
+        let params: (string | number)[] = [locationId]
+        let response: [QueryResult, FieldPacket[]] | QueryError = await conn.execute<Job[]>(query, params)
+
+        if (((response as unknown) as QueryError).code !== undefined) {
+            console.log(response)
+            return newError("Failed to Retrieve Jobs")
+        }
+
+        conn.end()
+        return response[0] as Job[]
+    }
+    catch (error) {
+        console.log(error)
+        return newError("Faied to Retrieve Jobs")
+    }
+}
+
+export async function dbGetJobSummariesByLocation(locationId: string): Promise<JobSummary[] | GenericError> {
+    const conn = await createConnection(dbConfig)
+
+    try {
+        let query: string = "SELECT Job.jobId as jobId, Job.dateOf as dateOf, Job.hoursWorked as hoursWorked, Job.rideCost as rideCost, Job.wage as wage, Employee.employeeId as employeeId, Employee.name as employeeName, Employee.dateCreated as employeeDateCreated, Location.locationId as locationId, Location.name as locationName, Location.dateCreated as locationDateCreated FROM Job JOIN Employee ON Job.employeeId = Employee.employeeId JOIN Location ON Job.locationId = Location.locationId WHERE Job.locationId = ? ORDER BY Job.dateOf"
+        let params: (string | number)[] = [locationId]
+        let response: [QueryResult, FieldPacket[]] | QueryError = await conn.execute<RawJobSummary[]>(query, params)
+
+        if (((response as unknown) as QueryError).code !== undefined) {
+            console.log(response)
+            return newError("Failed to Retrieve Jobs Summary")
+        }
+
+        conn.end()
+        return parseRawJobSummaries(response[0] as RawJobSummary[])
+    }
+    catch (error) {
+        console.log(error)
+        return newError("Faied to Retrieve Jobs Summary")
+    }
+}
+
+export async function dbAddJob(job: Job, connection?: Connection): Promise<GenericSuccess | GenericError> {
+    const conn = connection ? connection : await createConnection(dbConfig)
+
+    try {
+        let query: string = "INSERT INTO Job (jobId, locationId, employeeId, dateOf, hoursWorked, rideCost, wage) VALUES (?, ?, ?, ?, ?, ?, ?)"
+        let params: (string | number)[] = [job.jobId, job.locationId, job.employeeId, dateToSQLDate(job.dateOf), job.hoursWorked, job.rideCost, job.wage]
+        let response: [QueryResult, FieldPacket[]] | QueryError = await conn.execute<QueryResult>(query, params)
+
+        if (((response as unknown) as QueryError).code !== undefined) {
+            console.log(response)
+            return newError("Failed to Add Job(s)")
+        }
+
+        conn.end()
+        return newSuccess("Added Job Successfully")
+    }
+    catch (error) {
+        console.log(error)
+        return newError("Failed to Add Job(s)")
+    }
+}
+
+export async function dbModifyJob(job: Job, connection?: Connection): Promise<GenericSuccess | GenericError> {
+    const conn = connection ? connection : await createConnection(dbConfig)
+
+    try {
+        let query: string = "UPDATE Job SET hoursWorked = ?, rideCost = ?, wage = ? WHERE jobId = ?"
+        let params: (string | number)[] = [job.hoursWorked, job.rideCost, job.wage, job.jobId]
+        let response: [QueryResult, FieldPacket[]] | QueryError = await conn.execute<QueryResult>(query, params)
+
+        if (((response as unknown) as QueryError).code !== undefined) {
+            console.log(response)
+            return newError("Failed to Modify Job(s)")
+        }
+
+        conn.end()
+        return newSuccess("Modified Job Successfully")
+    }
+    catch (error) {
+        console.log(error)
+        return newError("Failed to Modify Job(s)")
+    }
+}
+
+export async function dbRemoveJob(job: Job, connection?: Connection): Promise<GenericSuccess | GenericError> {
+    const conn = connection ? connection : await createConnection(dbConfig)
+
+    try {
+        let query: string = "DELETE FROM Job WHERE jobId = ?"
+        let params: (string | number)[] = [job.jobId]
+        let response: [QueryResult, FieldPacket[]] | QueryError = await conn.execute<QueryResult>(query, params)
+
+        if (((response as unknown) as QueryError).code !== undefined) {
+            console.log(response)
+            return newError("Failed to Remove Job(s)")
+        }
+
+        conn.end()
+        return newSuccess("Removed Job Successfully")
+    }
+    catch (error) {
+        console.log(error)
+        return newError("Failed to Remove Job(s)")
+    }
+}
+
+export async function dbAddModifyRemoveJobs(add: Job[], modify: Job[], remove: Job[]): Promise<GenericSuccess | GenericError> {
+    const conn = await createConnection(dbConfig)
+    let successes: GenericSuccess[] = []
+    let failures: GenericError[] = []
+
+    try {
+        // add
+        for (let adding of add) {
+            let result: GenericSuccess | GenericError = await dbAddJob(adding, conn)
+
+            if ((result as GenericError).error)
+                failures.push(result as GenericError)
+
+            if ((result as GenericSuccess).success)
+                successes.push(result as GenericSuccess)
+        }
+
+        if (failures.length !== 0)
+            console.log(`Failures (Add):\n${failures}`)
+
+        if (successes.length === add.length)
+            console.log("All to-be Added Jobs Added Successfully")
+
+        failures = []
+        successes = []
+
+        // modify
+        for (let modifying of modify) {
+            let result: GenericSuccess | GenericError = await dbModifyJob(modifying, conn)
+
+            if ((result as GenericError).error)
+                failures.push(result as GenericError)
+
+            if ((result as GenericSuccess).success)
+                successes.push(result as GenericSuccess)
+        }
+
+        if (failures.length !== 0)
+            console.log(`Failures (Modify):\n${failures}`)
+
+        if (successes.length === add.length)
+            console.log("All to-be Modified Jobs Modified Successfully")
+
+        failures = []
+        successes = []
+
+        // delete
+        for (let removing of remove) {
+            let result: GenericSuccess | GenericError = await dbRemoveJob(removing, conn)
+
+            if ((result as GenericError).error)
+                failures.push(result as GenericError)
+
+            if ((result as GenericSuccess).success)
+                successes.push(result as GenericSuccess)
+        }
+
+        if (failures.length !== 0)
+            console.log(`Failures (Remove):\n${failures}`)
+
+        if (successes.length === add.length)
+            console.log("All to-be Removed Jobs Removed Successfully")
+
+        conn.end()
+        return newSuccess("Database Updated")
+    }
+    catch (error) {
+        console.log(error)
+        return newError("INTERNAL SERVER ERROR")
     }
 }
