@@ -11,3 +11,9 @@ export interface Location extends RowDataPacket {
     name: string
     dateCreated: Date
 }
+
+export interface Employee extends RowDataPacket {
+    employeeId: string
+    name: string
+    dateCreated: Date
+}
