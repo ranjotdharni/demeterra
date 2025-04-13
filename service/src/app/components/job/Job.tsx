@@ -8,7 +8,7 @@ export default function JobProps({ job } : JobProps) {
 
     return (
         <li>
-            <h3>{job.employee.name}</h3>
+            <p className="text-xl">{job.employee.name}</p>
         </li>
     )
 }

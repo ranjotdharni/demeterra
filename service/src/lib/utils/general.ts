@@ -1,5 +1,5 @@
-import { GenericError, GenericSuccess } from "../types/general"
 import { DateGroupedJobSummaries, JobSummary, RawJobSummary } from "../types/db"
+import { GenericError, GenericSuccess } from "../types/general"
 
 export function newError(message: string): GenericError {
     return { error: true, message: message } as GenericError

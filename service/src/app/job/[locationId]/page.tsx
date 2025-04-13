@@ -1,6 +1,6 @@
-import { dbGetJobSummariesByLocation, dbGetLocationById } from "@/db/actions"
+import { dbGetEmployees, dbGetJobSummariesByLocation, dbGetLocationById } from "@/db/actions"
 import { groupJobSummariesByDate } from "@/lib/utils/general"
-import { DateGroupedJobSummaries, JobSummary, Location } from "@/lib/types/db"
+import { DateGroupedJobSummaries, Employee, JobSummary, Location } from "@/lib/types/db"
 import JobView from "@/app/components/job/JobView"
 import { GenericError } from "@/lib/types/general"
 import NotFound from "@/app/404"
@@ -26,7 +26,12 @@ export default async function Page({ params } : JobPageProps) {
 
     const jobs: DateGroupedJobSummaries[] =  groupJobSummariesByDate(jobsResult as JobSummary[])
 
+    const employees: Employee[] | GenericError = await dbGetEmployees()
+
+    if ((employees as GenericError).error)
+        return <NotFound message="Could not retrieve Employees" />
+
     return (
-        <JobView locationOfJobs={location} jobsAtLocation={jobs} />
+        <JobView locationOfJobs={location} jobsAtLocation={jobs} allEmployees={employees as Employee[]} />
     )
 }
