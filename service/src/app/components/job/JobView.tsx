@@ -11,7 +11,7 @@ interface JobViewProps {
     allEmployees: Employee[]
 }
 
-export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees } : JobViewProps){
+export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees } : JobViewProps) {
     const [location, setLocation] = useState<Location>(locationOfJobs)
     const [jobGroupsHardCopy, setJobGroupsHardCopy] = useState<DateGroupedJobSummaries[]>(jobsAtLocation)
     const [jobGroups, setJobGroups] = useState<DateGroupedJobSummaries[]>(jobsAtLocation)
@@ -253,11 +253,11 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
     }
 
     function undoChanges() {
-        setJobGroups(jobGroupsHardCopy)
         setAddedGroups([])
         setModifiedGroups([])
         setDeletedGroups([])
         setDeletedSummaries([])
+        setJobGroups(jobGroupsHardCopy)
     }
 
     return (
@@ -270,7 +270,16 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
             <ul className="space-y-2 p-2">
                 {
                     [...jobGroups, ...modifiedGroups, ...addedGroups].sort((a, b) => a.dateOf.getTime() - b.dateOf.getTime()).map(group => {
-                        return <JobGroup key={group.id} group={group.summaries} dateOf={group.dateOf} employees={employees} />
+                        return <JobGroup 
+                            key={group.id} 
+                            group={group.summaries} 
+                            dateOf={group.dateOf} 
+                            employees={employees} 
+                            addJob={modifyAddJob(group.id)}
+                            editJob={modifyEditJob(group.id)}
+                            removeJob={modifyRemoveJob(group.id)}
+                            removeGroup={deleteGroup(group.id)}
+                        />
                     })
                 }
             </ul>

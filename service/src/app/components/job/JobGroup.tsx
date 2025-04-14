@@ -8,9 +8,13 @@ export interface JobGroupProps {
     dateOf: Date
     group: JobSummary[]
     employees: Employee[]
+    addJob: (add: JobSummary) => void
+    editJob: (edit: JobSummary) => void
+    removeJob: (remove: JobSummary) => void
+    removeGroup: () => void
 }
 
-export default function JobGroup({ dateOf, group, employees } : JobGroupProps) {
+export default function JobGroup({ dateOf, group, employees, addJob, editJob, removeJob } : JobGroupProps) {
     const filteredEmployees: Employee[] = employees.filter(e => group.find(g => g.employee.employeeId === e.employeeId) === undefined)
     const [currentSelection, setCurrentSelection] = useState<string>("")
 
@@ -37,7 +41,7 @@ export default function JobGroup({ dateOf, group, employees } : JobGroupProps) {
             <ul>
                 {
                     group.map(job => {
-                        return <Job key={job.job.jobId} job={job} />
+                        return <Job key={job.job.jobId} job={job} editJob={editJob} removeJob={removeJob} />
                     })
                 }
             </ul>

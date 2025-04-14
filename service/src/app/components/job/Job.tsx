@@ -6,9 +6,11 @@ import { useState } from "react"
 
 interface JobProps {
     job: JobSummary
+    editJob: (edit: JobSummary) => void
+    removeJob: (remove: JobSummary) => void
 }
 
-export default function JobProps({ job } : JobProps) {
+export default function JobProps({ job, editJob, removeJob } : JobProps) {
     const [hours, setHours] = useState<string>("1")
 
     return (
