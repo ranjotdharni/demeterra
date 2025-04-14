@@ -49,6 +49,7 @@ export interface JobSummary {
 }
 
 export interface DateGroupedJobSummaries {
+    id: string
     dateOf: Date
     summaries: JobSummary[]
 }

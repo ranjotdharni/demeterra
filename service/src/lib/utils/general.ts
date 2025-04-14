@@ -1,5 +1,6 @@
 import { DateGroupedJobSummaries, JobSummary, RawJobSummary } from "../types/db"
 import { GenericError, GenericSuccess } from "../types/general"
+import { v4 as uuidv4 } from "uuid"
 
 export function newError(message: string): GenericError {
     return { error: true, message: message } as GenericError
@@ -51,6 +52,7 @@ export function groupJobSummariesByDate(jobSummaries: JobSummary[]): DateGrouped
 
     return arrays.map(js => {
         return {
+            id: uuidv4(),
             dateOf: js[0].job.dateOf,
             summaries: js
         }

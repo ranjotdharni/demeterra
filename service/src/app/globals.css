@@ -4,12 +4,14 @@
   --background: #cccccc;
   --foreground: #292929;
   --light-grey: #6d6666;
+  --green: #039656;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-light-grey: var(--light-grey);
+  --color-green: var(--green);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -19,6 +21,7 @@
     --background: #292929;
     --foreground: #cccccc;
     --light-grey: #6d6666;
+    --green: #039656;
   }
 }
 
