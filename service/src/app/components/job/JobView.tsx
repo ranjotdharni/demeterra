@@ -13,6 +13,7 @@ interface JobViewProps {
 
 export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees } : JobViewProps){
     const [location, setLocation] = useState<Location>(locationOfJobs)
+    const [jobGroupsHardCopy, setJobGroupsHardCopy] = useState<DateGroupedJobSummaries[]>(jobsAtLocation)
     const [jobGroups, setJobGroups] = useState<DateGroupedJobSummaries[]>(jobsAtLocation)
     const [employees, setEmployees] = useState<Employee[]>(allEmployees)
     const [newDate, setNewDate] = useState<string>(new Date().toString())
@@ -20,6 +21,7 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
     const [addedGroups, setAddedGroups] = useState<DateGroupedJobSummaries[]>([])
     const [modifiedGroups, setModifiedGroups] = useState<DateGroupedJobSummaries[]>([])
     const [deletedGroups, setDeletedGroups] = useState<DateGroupedJobSummaries[]>([])
+    const [deletedSummaries, setDeletedSummaries] = useState<JobSummary[]>([])
 
     function addGroup() {
         const dateOf = new Date(newDate)
@@ -34,6 +36,230 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
         setAddedGroups(updatedAddedGroups)
     }
 
+    function modifyAddJob(id: string): (addedJob: JobSummary) => void {
+        return (addedJob: JobSummary) => {
+            const existingGroupIndex = jobGroups.findIndex(j => j.id === id)
+            const addedGroupIndex = addedGroups.findIndex(j => j.id === id)
+            const modifiedGroupIndex = modifiedGroups.findIndex(j => j.id === id)
+
+            if (existingGroupIndex !== -1) {
+                const updatedSummaries: DateGroupedJobSummaries = jobGroups[existingGroupIndex] // get the to-be updated job group
+                const updatedModifiedGroup: DateGroupedJobSummaries[] = [...modifiedGroups]
+                const updatedExistingGroup: DateGroupedJobSummaries[] = [...jobGroups]
+
+                updatedExistingGroup.splice(existingGroupIndex, 1)  // splice out the job group that's about to be modified from existing groups
+                
+                updatedSummaries.summaries.push(addedJob)   // add new summary into the to-be updated job group
+                updatedModifiedGroup.push(updatedSummaries) // add the updated summaries into the modified jobs groups
+                
+                // propogate changes to existing and modified job groups
+                setJobGroups(updatedExistingGroup)
+                setModifiedGroups(updatedModifiedGroup)
+            }
+            else if (addedGroupIndex !== -1) {
+                const updatedSummaries: DateGroupedJobSummaries = addedGroups[addedGroupIndex]
+                const updatedAddedGroup: DateGroupedJobSummaries[] = [...addedGroups]
+
+                updatedSummaries.summaries.push(addedJob)
+                updatedAddedGroup.push(updatedSummaries)
+
+                setAddedGroups(updatedAddedGroup)
+            }
+            else if (modifiedGroupIndex !== -1) {
+                const updatedSummaries: DateGroupedJobSummaries = modifiedGroups[modifiedGroupIndex]
+                const updatedModifiedGroup: DateGroupedJobSummaries[] = [...modifiedGroups]
+
+                updatedSummaries.summaries.push(addedJob)
+                updatedModifiedGroup.push(updatedSummaries)
+
+                setModifiedGroups(updatedModifiedGroup)
+            }
+            else {
+                console.log("Could not find Job Group")
+                return
+            }
+        }
+    }
+
+    function modifyEditJob(id: string): (editedJob: JobSummary) => void {
+        return (editedJob: JobSummary) => {
+            const existingGroupIndex = jobGroups.findIndex(j => j.id === id)
+            const addedGroupIndex = addedGroups.findIndex(j => j.id === id)
+            const modifiedGroupIndex = modifiedGroups.findIndex(j => j.id === id)
+
+            if (existingGroupIndex !== -1) {
+                const updatedSummaries: DateGroupedJobSummaries = jobGroups[existingGroupIndex] // get the to-be updated job group
+                const updatedModifiedGroup: DateGroupedJobSummaries[] = [...modifiedGroups]
+                const updatedExistingGroup: DateGroupedJobSummaries[] = [...jobGroups]
+
+                updatedExistingGroup.splice(existingGroupIndex, 1)  // splice out the job group that's about to be modified from existing groups
+                
+                const updatedSummaryIndex: number = updatedSummaries.summaries.findIndex(s => s.job.jobId === editedJob.job.jobId)
+                if (updatedSummaryIndex === -1) {
+                    console.log("Could not find to-be updated Job in Existing Job Group")
+                    return
+                }
+
+                updatedSummaries.summaries[updatedSummaryIndex] = editedJob   // add updated summary into the to-be updated job group, replacing its old summary
+                updatedModifiedGroup.push(updatedSummaries) // add the updated summaries into the modified jobs groups
+                
+                // propogate changes to existing and modified job groups
+                setJobGroups(updatedExistingGroup)
+                setModifiedGroups(updatedModifiedGroup)
+            }
+            else if (addedGroupIndex !== -1) {
+                const updatedSummaries: DateGroupedJobSummaries = addedGroups[addedGroupIndex]
+                const updatedAddedGroup: DateGroupedJobSummaries[] = [...addedGroups]
+
+                const updatedSummaryIndex: number = updatedSummaries.summaries.findIndex(s => s.job.jobId === editedJob.job.jobId)
+                if (updatedSummaryIndex === -1) {
+                    console.log("Could not find to-be updated Job in Added Job Group")
+                    return
+                }
+
+                updatedSummaries.summaries[updatedSummaryIndex] = editedJob
+                updatedAddedGroup.push(updatedSummaries)
+
+                setAddedGroups(updatedAddedGroup)
+            }
+            else if (modifiedGroupIndex !== -1) {
+                const updatedSummaries: DateGroupedJobSummaries = modifiedGroups[modifiedGroupIndex]
+                const updatedModifiedGroup: DateGroupedJobSummaries[] = [...modifiedGroups]
+
+                const updatedSummaryIndex: number = updatedSummaries.summaries.findIndex(s => s.job.jobId === editedJob.job.jobId)
+                if (updatedSummaryIndex === -1) {
+                    console.log("Could not find to-be updated Job in Modified Job Group")
+                    return
+                }
+
+                updatedSummaries.summaries[updatedSummaryIndex] = editedJob
+                updatedModifiedGroup.push(updatedSummaries)
+
+                setModifiedGroups(updatedModifiedGroup)
+            }
+            else {
+                console.log("Could not find Job Group")
+                return
+            }
+        }
+    }
+
+    function modifyRemoveJob(id: string): (removedJob: JobSummary) => void {
+        return (removedJob: JobSummary) => {
+            const existingGroupIndex = jobGroups.findIndex(j => j.id === id)
+            const addedGroupIndex = addedGroups.findIndex(j => j.id === id)
+            const modifiedGroupIndex = modifiedGroups.findIndex(j => j.id === id)
+
+            if (existingGroupIndex !== -1) {
+                const updatedSummaries: DateGroupedJobSummaries = jobGroups[existingGroupIndex] // get the to-be updated job group
+                const updatedModifiedGroup: DateGroupedJobSummaries[] = [...modifiedGroups]
+                const updatedExistingGroup: DateGroupedJobSummaries[] = [...jobGroups]
+
+                updatedExistingGroup.splice(existingGroupIndex, 1)  // splice out the job group that's about to be modified from existing groups
+                
+                const removedSummaryIndex: number = updatedSummaries.summaries.findIndex(s => s.job.jobId === removedJob.job.jobId)
+                if (removedSummaryIndex === -1) {
+                    console.log("Could not find to-be removed Job in Existing Job Group")
+                    return
+                }
+
+                updatedSummaries.summaries.splice(removedSummaryIndex, 1)   // splice out removed summary from the to-be updated job group
+                updatedModifiedGroup.push(updatedSummaries) // add the updated summaries into the modified jobs groups
+                
+                const deletedSummariesUpdate: JobSummary[] = [...deletedSummaries, removedJob]
+                setDeletedSummaries(deletedSummariesUpdate)
+
+                // propogate changes to existing and modified job groups
+                setJobGroups(updatedExistingGroup)
+                setModifiedGroups(updatedModifiedGroup)
+            }
+            else if (addedGroupIndex !== -1) {
+                const updatedSummaries: DateGroupedJobSummaries = addedGroups[addedGroupIndex]
+                const updatedAddedGroup: DateGroupedJobSummaries[] = [...addedGroups]
+
+                const removedSummaryIndex: number = updatedSummaries.summaries.findIndex(s => s.job.jobId === removedJob.job.jobId)
+                if (removedSummaryIndex === -1) {
+                    console.log("Could not find to-be removed Job in Added Job Group")
+                    return
+                }
+
+                updatedSummaries.summaries.splice(removedSummaryIndex, 1)
+                updatedAddedGroup.push(updatedSummaries)
+
+                setAddedGroups(updatedAddedGroup)
+            }
+            else if (modifiedGroupIndex !== -1) {
+                const updatedSummaries: DateGroupedJobSummaries = modifiedGroups[modifiedGroupIndex]
+                const updatedModifiedGroup: DateGroupedJobSummaries[] = [...modifiedGroups]
+
+                const removedSummaryIndex: number = updatedSummaries.summaries.findIndex(s => s.job.jobId === removedJob.job.jobId)
+                if (removedSummaryIndex === -1) {
+                    console.log("Could not find to-be removed Job in Modified Job Group")
+                    return
+                }
+
+                updatedSummaries.summaries.splice(removedSummaryIndex, 1)
+                updatedModifiedGroup.push(updatedSummaries)
+
+                const deletedSummariesUpdate: JobSummary[] = [...deletedSummaries, removedJob]
+                setDeletedSummaries(deletedSummariesUpdate)
+
+                setModifiedGroups(updatedModifiedGroup)
+            }
+            else {
+                console.log("Could not find Job Group")
+                return
+            }
+        }
+    }
+
+    function deleteGroup(id: string): () => void {
+        return () => {
+            const existingGroupIndex = jobGroups.findIndex(j => j.id === id)
+            const addedGroupIndex = addedGroups.findIndex(j => j.id === id)
+            const modifiedGroupIndex = modifiedGroups.findIndex(j => j.id === id)
+
+            if (existingGroupIndex !== -1) {
+                const removingGroup: DateGroupedJobSummaries = jobGroups[existingGroupIndex] // get the to-be removed job group
+                const updatedDeletedGroup: DateGroupedJobSummaries[] = [...deletedGroups, removingGroup]    // add to-be removed job group to deleted groups
+                const updatedExistingGroup: DateGroupedJobSummaries[] = [...jobGroups]
+
+                updatedExistingGroup.splice(existingGroupIndex, 1)  // splice out the job group that's about to be deleted from existing groups
+                
+                // propogate changes to existing and deleted job groups
+                setJobGroups(updatedExistingGroup)
+                setDeletedGroups(updatedDeletedGroup)
+            }
+            else if (addedGroupIndex !== -1) {
+                const updatedAddedGroup: DateGroupedJobSummaries[] = [...addedGroups]
+                updatedAddedGroup.splice(addedGroupIndex, 1)
+                setAddedGroups(updatedAddedGroup)
+            }
+            else if (modifiedGroupIndex !== -1) {
+                const removingGroup: DateGroupedJobSummaries = modifiedGroups[modifiedGroupIndex]
+                const updatedDeletedGroup: DateGroupedJobSummaries[] = [...deletedGroups, removingGroup]
+                const updatedModifiedGroup: DateGroupedJobSummaries[] = [...modifiedGroups]
+
+                updatedModifiedGroup.splice(modifiedGroupIndex, 1)
+
+                setModifiedGroups(updatedModifiedGroup)
+                setDeletedGroups(updatedDeletedGroup)
+            }
+            else {
+                console.log("Could not find Job Group")
+                return
+            }
+        }
+    }
+
+    function undoChanges() {
+        setJobGroups(jobGroupsHardCopy)
+        setAddedGroups([])
+        setModifiedGroups([])
+        setDeletedGroups([])
+        setDeletedSummaries([])
+    }
+
     return (
         <section className="p-4">
             <header className="w-full border-b border-light-grey p-1 flex flex-row space-x-2">
@@ -43,12 +269,7 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
             </header>
             <ul className="space-y-2 p-2">
                 {
-                    jobGroups.map(group => {
-                        return <JobGroup key={group.id} group={group.summaries} dateOf={group.dateOf} employees={employees} />
-                    })
-                }
-                {
-                    addedGroups.map(group => {
+                    [...jobGroups, ...modifiedGroups, ...addedGroups].sort((a, b) => a.dateOf.getTime() - b.dateOf.getTime()).map(group => {
                         return <JobGroup key={group.id} group={group.summaries} dateOf={group.dateOf} employees={employees} />
                     })
                 }
