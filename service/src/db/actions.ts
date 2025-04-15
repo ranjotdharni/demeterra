@@ -4,7 +4,7 @@ import { Session, Location, Employee, Job, JobSummary, RawJobSummary } from "@/l
 import { newError, newSuccess, parseRawJobSummaries } from "@/lib/utils/general"
 import { dateToSQLDate } from "@/lib/utils/db"
 import { v4 as uuidv4 } from "uuid"
-import { conn, dbConfig } from "./config"
+import { dbConfig } from "./config"
 
 // Sessions
 export async function dbCreateSession(username: string): Promise<Session[] | GenericError> {
