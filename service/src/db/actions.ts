@@ -259,7 +259,8 @@ export async function dbAddJob(job: Job, connection?: Connection): Promise<Gener
             return newError("Failed to Add Job(s)")
         }
 
-        conn.end()
+        if (!connection)
+            conn.end()
         return newSuccess("Added Job Successfully")
     }
     catch (error) {
@@ -281,7 +282,8 @@ export async function dbModifyJob(job: Job, connection?: Connection): Promise<Ge
             return newError("Failed to Modify Job(s)")
         }
 
-        conn.end()
+        if (!connection)
+            conn.end()
         return newSuccess("Modified Job Successfully")
     }
     catch (error) {
@@ -303,7 +305,8 @@ export async function dbRemoveJob(job: Job, connection?: Connection): Promise<Ge
             return newError("Failed to Remove Job(s)")
         }
 
-        conn.end()
+        if (!connection)
+            conn.end()
         return newSuccess("Removed Job Successfully")
     }
     catch (error) {

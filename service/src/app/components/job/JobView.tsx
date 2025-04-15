@@ -1,11 +1,14 @@
 "use client"
 
-import { DateGroupedJobSummaries, Employee, JobSummary, Location } from "@/lib/types/db"
+import { DateGroupedJobSummaries, Employee, Job, JobSummary, Location } from "@/lib/types/db"
 import { v4 as uuidv4 } from "uuid"
 import JobGroup from "./JobGroup"
-import { useState } from "react"
+import { MouseEvent, useEffect, useState } from "react"
+import { convertSummariesToJobs, deepCopyDateGroupedJobSummariesArray, flattenDateGroupedJobSummariesToJobSummaries } from "@/lib/utils/general"
+import { GenericError, GenericSuccess } from "@/lib/types/general"
+import { API_EDIT } from "@/lib/constants/routes"
 
-interface JobViewProps {
+export interface JobViewProps {
     locationOfJobs: Location
     jobsAtLocation: DateGroupedJobSummaries[]
     allEmployees: Employee[]
@@ -16,8 +19,8 @@ const DEFAULT_RIDE_COST: number = 15.00
 
 export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees } : JobViewProps) {
     const [location, setLocation] = useState<Location>(locationOfJobs)
-    const [jobGroupsHardCopy, setJobGroupsHardCopy] = useState<DateGroupedJobSummaries[]>(jobsAtLocation)
-    const [jobGroups, setJobGroups] = useState<DateGroupedJobSummaries[]>(jobsAtLocation)
+    const [jobGroupsHardCopy, setJobGroupsHardCopy] = useState<DateGroupedJobSummaries[]>(deepCopyDateGroupedJobSummariesArray(jobsAtLocation))
+    const [jobGroups, setJobGroups] = useState<DateGroupedJobSummaries[]>(deepCopyDateGroupedJobSummariesArray(jobsAtLocation))
     const [employees, setEmployees] = useState<Employee[]>(allEmployees)
     const [newDate, setNewDate] = useState<string>(new Date().toString())
 
@@ -157,8 +160,8 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
 
             if (existingGroupIndex !== -1) {
                 const updatedSummaries: DateGroupedJobSummaries = jobGroups[existingGroupIndex] // get the to-be updated job group
-                const updatedModifiedGroup: DateGroupedJobSummaries[] = [...modifiedGroups]
-                const updatedExistingGroup: DateGroupedJobSummaries[] = [...jobGroups]
+                const updatedModifiedGroup: DateGroupedJobSummaries[] = deepCopyDateGroupedJobSummariesArray(modifiedGroups)
+                const updatedExistingGroup: DateGroupedJobSummaries[] = deepCopyDateGroupedJobSummariesArray(jobGroups)
 
                 updatedExistingGroup.splice(existingGroupIndex, 1)  // splice out the job group that's about to be modified from existing groups
                 
@@ -218,28 +221,6 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
         }
     }
 
-    /*function modifyWage(id: string): (wage: number) => void {
-        return (wage: number) => {
-            const existingGroupIndex = jobGroups.findIndex(j => j.id === id)
-            const addedGroupIndex = addedGroups.findIndex(j => j.id === id)
-            const modifiedGroupIndex = modifiedGroups.findIndex(j => j.id === id)
-
-            if (existingGroupIndex !== -1) {
-                
-            }
-            else if (addedGroupIndex !== -1) {
-
-            }
-            else if (modifiedGroupIndex !== -1) {
-
-            }
-            else {
-                console.log("Could not find Job Group")
-                return
-            }
-        }
-    }*/
-
     function deleteGroup(id: string): () => void {
         return () => {
             const existingGroupIndex = jobGroups.findIndex(j => j.id === id)
@@ -284,8 +265,63 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
         setModifiedGroups([])
         setDeletedGroups([])
         setDeletedSummaries([])
-        setJobGroups(jobGroupsHardCopy)
+        setJobGroups(deepCopyDateGroupedJobSummariesArray(jobGroupsHardCopy))
     }
+
+    async function onSave(event: MouseEvent<HTMLButtonElement>) {
+        event.preventDefault()
+
+        if (addedGroups.length === 0 && modifiedGroups.length === 0 && deletedGroups.length === 0 && deletedSummaries.length === 0)
+            return
+
+        const adding: Job[] = convertSummariesToJobs(flattenDateGroupedJobSummariesToJobSummaries(addedGroups))
+        const editing: Job[] = convertSummariesToJobs(flattenDateGroupedJobSummariesToJobSummaries(modifiedGroups))
+        const removing: Job[] = [...convertSummariesToJobs(flattenDateGroupedJobSummariesToJobSummaries(deletedGroups)), ...convertSummariesToJobs(deletedSummaries)]
+
+        const result: GenericError | JobViewProps = await fetch(`${process.env.NEXT_PUBLIC_ORIGIN}${API_EDIT}`, {
+            method: "POST",
+            body: JSON.stringify({
+                locationId: location.locationId,
+                adding: adding,
+                modifying: editing,
+                removing: removing
+            })
+        }).then(middle => {
+            return middle.json()
+        }).then(response => {
+            return response
+        })
+
+        if ((result as GenericError).error) {
+            console.log("Fatal Error When Refetching Changes")
+            return
+        }
+
+        setLocation((result as JobViewProps).locationOfJobs)
+        setJobGroupsHardCopy(deepCopyDateGroupedJobSummariesArray((result as JobViewProps).jobsAtLocation))
+        setJobGroups(deepCopyDateGroupedJobSummariesArray((result as JobViewProps).jobsAtLocation))
+        setEmployees((result as JobViewProps).allEmployees)
+
+        setAddedGroups([])
+        setModifiedGroups([])
+        setDeletedGroups([])
+        setDeletedSummaries([])
+    }
+
+    // Uncomment this block for testing in the console
+
+    /*function debugTest() {
+        console.log("--- Test Results ---")
+        console.log("Existing: ", jobGroups)
+        console.log("Added: ", addedGroups)
+        console.log("Modified: ", modifiedGroups)
+        console.log("Deleted (G): ", deletedGroups)
+        console.log("Deleted (S): ", deletedSummaries)
+    }
+
+    useEffect(() => {
+        debugTest()
+    }, [addedGroups, jobGroups, modifiedGroups, deletedGroups, deletedSummaries])*/
 
     return (
         <section className="p-4">
@@ -293,6 +329,8 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
                 <h1 className="text-4xl text-green">{location.name}</h1>
                 <input type="date" value={newDate.toString()} onChange={e => { setNewDate(e.target.value) }} />
                 <button onClick={addGroup} className="px-2 bg-light-grey rounded-md">Add Date</button>
+                <button onClick={undoChanges} className="px-2 bg-light-grey rounded-md">Cancel</button>
+                <button onClick={onSave} className="px-2 bg-light-grey rounded-md">Save</button>
             </header>
             <ul className="space-y-2 p-2">
                 {

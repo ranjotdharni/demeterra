@@ -1,4 +1,4 @@
-import { DateGroupedJobSummaries, JobSummary, RawJobSummary } from "../types/db"
+import { DateGroupedJobSummaries, Job, JobSummary, RawJobSummary } from "../types/db"
 import { GenericError, GenericSuccess } from "../types/general"
 import { v4 as uuidv4 } from "uuid"
 
@@ -56,5 +56,55 @@ export function groupJobSummariesByDate(jobSummaries: JobSummary[]): DateGrouped
             dateOf: js[0].job.dateOf,
             summaries: js
         }
+    })
+}
+
+export function deepCopyDateGroupedJobSummaries(input: DateGroupedJobSummaries): DateGroupedJobSummaries {
+    return {
+        id: input.id,
+        dateOf: new Date(input.dateOf),
+        summaries: input.summaries.map(summary => ({
+            job: {
+                jobId: summary.job.jobId,
+                locationId: summary.job.locationId,
+                employeeId: summary.job.employeeId,
+                dateOf: new Date(summary.job.dateOf),
+                hoursWorked: summary.job.hoursWorked,
+                rideCost: summary.job.rideCost,
+                wage: summary.job.wage,
+            },
+            employee: {
+                employeeId: summary.employee.employeeId,
+                name: summary.employee.name,
+                dateCreated: new Date(summary.employee.dateCreated),
+            },
+            location: {
+                locationId: summary.location.locationId,
+                name: summary.location.name,
+                dateCreated: new Date(summary.location.dateCreated),
+            }
+        } as JobSummary
+    ))}
+}
+
+export function deepCopyDateGroupedJobSummariesArray(input: DateGroupedJobSummaries[]): DateGroupedJobSummaries[] {
+    return input.map(item => {
+        return deepCopyDateGroupedJobSummaries(item)
+    })
+}
+
+export function flattenDateGroupedJobSummariesToJobSummaries(complex: DateGroupedJobSummaries[]): JobSummary[] {
+    let flattened: JobSummary[] = []
+
+    complex.forEach(group => {
+        flattened = [...flattened, ...group.summaries]
+    })
+
+    return flattened
+}
+
+export function convertSummariesToJobs(input: JobSummary[]): Job[] {
+    return input.map(summary => {
+        return summary.job
     })
 }

@@ -4,7 +4,7 @@ import { Employee, Location, JobSummary, Job as JobType } from "@/lib/types/db"
 import { v4 as uuidv4 } from "uuid"
 import Job from "./Job"
 import { ChangeEvent, MouseEvent, useEffect, useState } from "react"
-import { Cross, X } from "lucide-react"
+import { X } from "lucide-react"
 
 export interface JobGroupProps {
     location: Location
@@ -19,7 +19,7 @@ export interface JobGroupProps {
     removeGroup: () => void
 }
 
-export default function JobGroup({ location, dateOf, group, employees, wage, rideCost, addJob, editJob, removeJob } : JobGroupProps) {
+export default function JobGroup({ location, dateOf, group, employees, wage, rideCost, addJob, editJob, removeJob, removeGroup } : JobGroupProps) {
     const filteredEmployees: Employee[] = employees.filter(e => group.find(g => g.employee.employeeId === e.employeeId) === undefined)
     const [currentSelection, setCurrentSelection] = useState<string>("")
 
@@ -98,7 +98,7 @@ export default function JobGroup({ location, dateOf, group, employees, wage, rid
 
     return (
         <li className="p-2 border rounded border-light-grey flex flex-row items-center space-x-2">
-            <button className="hover:text-red-800 hover:cursor-pointer">
+            <button onClick={removeGroup} className="hover:text-red-800 hover:cursor-pointer">
                 <X />
             </button>
 

@@ -1,9 +1,7 @@
-import { dbGetEmployees, dbGetJobSummariesByLocation, dbGetLocationById } from "@/db/actions"
-import { groupJobSummariesByDate } from "@/lib/utils/general"
-import { DateGroupedJobSummaries, Employee, JobSummary, Location } from "@/lib/types/db"
-import JobView from "@/app/components/job/JobView"
+import JobView, { JobViewProps } from "@/app/components/job/JobView"
 import { GenericError } from "@/lib/types/general"
 import NotFound from "@/app/404"
+import { fetchJobViewProps } from "@/lib/utils/db"
 
 interface JobPageProps {
     params: Promise<{ locationId: string }>
@@ -12,26 +10,12 @@ interface JobPageProps {
 export default async function Page({ params } : JobPageProps) {
     const { locationId } = await params
 
-    const locationResult: Location[] | GenericError = await dbGetLocationById(locationId)
+    const result: GenericError | JobViewProps = await fetchJobViewProps(locationId)
 
-    if ((locationResult as GenericError).error || (locationResult as Location[]).length === 0)
-        return <NotFound message="Location ID is not valid" />
-    
-    const location: Location = (locationResult as Location[])[0]
-
-    const jobsResult: JobSummary[] | GenericError = await dbGetJobSummariesByLocation(location.locationId)
-
-    if ((jobsResult as GenericError).error)
-        return <NotFound message="Failed to load jobs at this Location" />
-
-    const jobs: DateGroupedJobSummaries[] =  groupJobSummariesByDate(jobsResult as JobSummary[])
-
-    const employees: Employee[] | GenericError = await dbGetEmployees()
-
-    if ((employees as GenericError).error)
-        return <NotFound message="Could not retrieve Employees" />
+    if ((result as GenericError).error)
+        return <NotFound message={(result as GenericError).message} />
 
     return (
-        <JobView locationOfJobs={location} jobsAtLocation={jobs} allEmployees={employees as Employee[]} />
+        <JobView locationOfJobs={(result as JobViewProps).locationOfJobs} jobsAtLocation={(result as JobViewProps).jobsAtLocation} allEmployees={(result as JobViewProps).allEmployees} />
     )
 }
