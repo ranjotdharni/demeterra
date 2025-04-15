@@ -1,8 +1,8 @@
 "use client"
 
+import { ChangeEvent, MouseEvent } from "react"
 import { JobSummary } from "@/lib/types/db"
 import { Trash } from "lucide-react"
-import { useState } from "react"
 
 interface JobProps {
     job: JobSummary
@@ -11,13 +11,29 @@ interface JobProps {
 }
 
 export default function JobProps({ job, editJob, removeJob } : JobProps) {
-    const [hours, setHours] = useState<string>("1")
+    function onChange(event: ChangeEvent<HTMLInputElement>) {
+        event.preventDefault()
+
+        if (isNaN(+event.target.value))
+            return
+
+        const editedJob: JobSummary = {
+            ...job
+        }
+        editedJob.job.hoursWorked = +event.target.value
+        editJob(editedJob)
+    }
+
+    function onClick(event: MouseEvent) {
+        event.preventDefault()
+        removeJob(job)
+    }
 
     return (
         <li className="p-2 border-l border-r w-auto flex flex-row space-x-2">
             <p className="text-md text-green">{job.employee.name}</p>
-            <input type="number" value={hours} onChange={e => { setHours(e.target.value) }} className="bg-light-grey w-15" />
-            <button className="hover:text-red-800 hover:cursor-pointer">
+            <input type="number" value={`${job.job.hoursWorked}`} onChange={onChange} className="bg-light-grey w-15" />
+            <button onClick={onClick} className="hover:text-red-800 hover:cursor-pointer">
                 <Trash />
             </button>
         </li>

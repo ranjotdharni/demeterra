@@ -11,6 +11,9 @@ interface JobViewProps {
     allEmployees: Employee[]
 }
 
+const DEFAULT_WAGE: number = 16.50
+const DEFAULT_RIDE_COST: number = 15.00
+
 export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees } : JobViewProps) {
     const [location, setLocation] = useState<Location>(locationOfJobs)
     const [jobGroupsHardCopy, setJobGroupsHardCopy] = useState<DateGroupedJobSummaries[]>(jobsAtLocation)
@@ -61,7 +64,7 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
                 const updatedAddedGroup: DateGroupedJobSummaries[] = [...addedGroups]
 
                 updatedSummaries.summaries.push(addedJob)
-                updatedAddedGroup.push(updatedSummaries)
+                updatedAddedGroup[addedGroupIndex] = updatedSummaries
 
                 setAddedGroups(updatedAddedGroup)
             }
@@ -70,7 +73,7 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
                 const updatedModifiedGroup: DateGroupedJobSummaries[] = [...modifiedGroups]
 
                 updatedSummaries.summaries.push(addedJob)
-                updatedModifiedGroup.push(updatedSummaries)
+                updatedModifiedGroup[modifiedGroupIndex] = updatedSummaries
 
                 setModifiedGroups(updatedModifiedGroup)
             }
@@ -118,7 +121,8 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
                 }
 
                 updatedSummaries.summaries[updatedSummaryIndex] = editedJob
-                updatedAddedGroup.push(updatedSummaries)
+                updatedAddedGroup[addedGroupIndex] = updatedSummaries
+                // updatedAddedGroup[updatedAddedGroup.findIndex(g => g.id === updatedSummaries.id)] = updatedSummaries
 
                 setAddedGroups(updatedAddedGroup)
             }
@@ -133,7 +137,8 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
                 }
 
                 updatedSummaries.summaries[updatedSummaryIndex] = editedJob
-                updatedModifiedGroup.push(updatedSummaries)
+                updatedModifiedGroup[modifiedGroupIndex] = updatedSummaries
+                // updatedModifiedGroup[updatedModifiedGroup.findIndex(g => g.id === updatedSummaries.id)] = updatedSummaries
 
                 setModifiedGroups(updatedModifiedGroup)
             }
@@ -184,7 +189,7 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
                 }
 
                 updatedSummaries.summaries.splice(removedSummaryIndex, 1)
-                updatedAddedGroup.push(updatedSummaries)
+                updatedAddedGroup[addedGroupIndex] = updatedSummaries
 
                 setAddedGroups(updatedAddedGroup)
             }
@@ -199,7 +204,7 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
                 }
 
                 updatedSummaries.summaries.splice(removedSummaryIndex, 1)
-                updatedModifiedGroup.push(updatedSummaries)
+                updatedModifiedGroup[modifiedGroupIndex] = updatedSummaries
 
                 const deletedSummariesUpdate: JobSummary[] = [...deletedSummaries, removedJob]
                 setDeletedSummaries(deletedSummariesUpdate)
@@ -212,6 +217,28 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
             }
         }
     }
+
+    /*function modifyWage(id: string): (wage: number) => void {
+        return (wage: number) => {
+            const existingGroupIndex = jobGroups.findIndex(j => j.id === id)
+            const addedGroupIndex = addedGroups.findIndex(j => j.id === id)
+            const modifiedGroupIndex = modifiedGroups.findIndex(j => j.id === id)
+
+            if (existingGroupIndex !== -1) {
+                
+            }
+            else if (addedGroupIndex !== -1) {
+
+            }
+            else if (modifiedGroupIndex !== -1) {
+
+            }
+            else {
+                console.log("Could not find Job Group")
+                return
+            }
+        }
+    }*/
 
     function deleteGroup(id: string): () => void {
         return () => {
@@ -272,9 +299,12 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
                     [...jobGroups, ...modifiedGroups, ...addedGroups].sort((a, b) => a.dateOf.getTime() - b.dateOf.getTime()).map(group => {
                         return <JobGroup 
                             key={group.id} 
+                            location={locationOfJobs}
                             group={group.summaries} 
                             dateOf={group.dateOf} 
                             employees={employees} 
+                            wage={group.summaries.length === 0 ? DEFAULT_WAGE : group.summaries[0].job.wage}
+                            rideCost={group.summaries.length === 0 ? DEFAULT_RIDE_COST : group.summaries[0].job.rideCost}
                             addJob={modifyAddJob(group.id)}
                             editJob={modifyEditJob(group.id)}
                             removeJob={modifyRemoveJob(group.id)}
