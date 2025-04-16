@@ -2,7 +2,7 @@
 Web app to help manage employee hours.
 
 ## To Do
-[ ] Edit Dates
+[x] Edit Dates
 [ ] Copy Groups
 [ ] Nav Bar
 [ ] Statistics
