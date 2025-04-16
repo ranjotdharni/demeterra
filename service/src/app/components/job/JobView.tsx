@@ -4,7 +4,7 @@ import { DateGroupedJobSummaries, Employee, Job, JobSummary, Location } from "@/
 import { v4 as uuidv4 } from "uuid"
 import JobGroup from "./JobGroup"
 import { MouseEvent, useEffect, useState } from "react"
-import { convertSummariesToJobs, deepCopyDateGroupedJobSummariesArray, flattenDateGroupedJobSummariesToJobSummaries } from "@/lib/utils/general"
+import { convertSummariesToJobs, deepCopyDateGroupedJobSummaries, deepCopyDateGroupedJobSummariesArray, duplicateDateGroupedJobSummaries, flattenDateGroupedJobSummariesToJobSummaries, hasDuplicateDates } from "@/lib/utils/general"
 import { GenericError, GenericSuccess } from "@/lib/types/general"
 import { API_EDIT } from "@/lib/constants/routes"
 
@@ -306,6 +306,31 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
         }
     }
 
+    function duplicateGroup(id: string) {
+        return () => {
+            const existingGroupIndex = jobGroups.findIndex(j => j.id === id)
+            const addedGroupIndex = addedGroups.findIndex(j => j.id === id)
+            const modifiedGroupIndex = modifiedGroups.findIndex(j => j.id === id)
+
+            if (existingGroupIndex !== -1) {
+                const copy: DateGroupedJobSummaries = duplicateDateGroupedJobSummaries(jobGroups[existingGroupIndex])
+                setAddedGroups([...addedGroups, copy])
+            }
+            else if (addedGroupIndex !== -1) {
+                const copy: DateGroupedJobSummaries = duplicateDateGroupedJobSummaries(addedGroups[addedGroupIndex])
+                setAddedGroups([...addedGroups, copy])
+            }
+            else if (modifiedGroupIndex !== -1) {
+                const copy: DateGroupedJobSummaries = duplicateDateGroupedJobSummaries(modifiedGroups[modifiedGroupIndex])
+                setAddedGroups([...addedGroups, copy])
+            }
+            else {
+                console.log("Could not find Job Group")
+                return
+            }
+        }
+    }
+
     function undoChanges() {
         setAddedGroups([])
         setModifiedGroups([])
@@ -323,6 +348,12 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
         const adding: Job[] = convertSummariesToJobs(flattenDateGroupedJobSummariesToJobSummaries(addedGroups))
         const editing: Job[] = convertSummariesToJobs(flattenDateGroupedJobSummariesToJobSummaries(modifiedGroups))
         const removing: Job[] = [...convertSummariesToJobs(flattenDateGroupedJobSummariesToJobSummaries(deletedGroups)), ...convertSummariesToJobs(deletedSummaries)]
+
+        // duplicate dates are not allowed, create another pseudo-location using indexes to track multiple groups at same location
+        if (hasDuplicateDates([...adding, ...editing])) {
+            console.log("Duplicate Dates are not Allowed")
+            return
+        }
 
         const result: GenericError | JobViewProps = await fetch(`${process.env.NEXT_PUBLIC_ORIGIN}${API_EDIT}`, {
             method: "POST",
@@ -387,6 +418,7 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
                             employees={employees} 
                             wage={group.summaries.length === 0 ? DEFAULT_WAGE : group.summaries[0].job.wage}
                             rideCost={group.summaries.length === 0 ? DEFAULT_RIDE_COST : group.summaries[0].job.rideCost}
+                            duplicate={duplicateGroup(group.id)}
                             editDate={editDate(group.id)}
                             addJob={modifyAddJob(group.id)}
                             editJob={modifyEditJob(group.id)}

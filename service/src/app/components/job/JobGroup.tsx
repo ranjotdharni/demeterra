@@ -1,10 +1,10 @@
 "use client"
 
-import { Employee, Location, JobSummary, Job as JobType } from "@/lib/types/db"
+import { Employee, Location, JobSummary, Job as JobType, DateGroupedJobSummaries } from "@/lib/types/db"
 import { v4 as uuidv4 } from "uuid"
 import Job from "./Job"
 import { ChangeEvent, MouseEvent, useEffect, useState } from "react"
-import { X } from "lucide-react"
+import { Copy, X } from "lucide-react"
 import { dateToFormat, parseLocalDateFromInputValue } from "@/lib/utils/general"
 
 export interface JobGroupProps {
@@ -14,6 +14,7 @@ export interface JobGroupProps {
     employees: Employee[]
     wage: number
     rideCost: number
+    duplicate: () => void
     editDate: (newDate: Date) => void
     addJob: (add: JobSummary) => void
     editJob: (edit: JobSummary) => void
@@ -21,7 +22,7 @@ export interface JobGroupProps {
     removeGroup: () => void
 }
 
-export default function JobGroup({ location, dateOf, group, employees, wage, rideCost, editDate, addJob, editJob, removeJob, removeGroup } : JobGroupProps) {
+export default function JobGroup({ location, dateOf, group, employees, wage, rideCost, duplicate, editDate, addJob, editJob, removeJob, removeGroup } : JobGroupProps) {
     const filteredEmployees: Employee[] = employees.filter(e => group.find(g => g.employee.employeeId === e.employeeId) === undefined)
     const [currentSelection, setCurrentSelection] = useState<string>("")
 
@@ -92,6 +93,11 @@ export default function JobGroup({ location, dateOf, group, employees, wage, rid
         })
     }
 
+    function createDuplicate(event: MouseEvent<HTMLButtonElement>) {
+        event.preventDefault()
+        duplicate()
+    }
+
     useEffect(() => {
         if (
             filteredEmployees.length > 0 &&
@@ -108,8 +114,11 @@ export default function JobGroup({ location, dateOf, group, employees, wage, rid
             </button>
 
             <div className="min-w-60 p-2 border border-light-grey rounded-lg space-y-2 space-x-2">
-                <h3 className="text-xl">
+                <h3 className="text-xl flex justify-between items-center space-x-2">
                     <input type="date" value={dateToFormat("YYYY-MM-DD", new Date(dateOf))} onChange={e => { editDate(parseLocalDateFromInputValue(e.target.value)) }} />
+                    <button onClick={createDuplicate} className="hover:text-green hover:cursor-pointer">
+                        <Copy />
+                    </button>
                 </h3>
                 <label>Wage: </label>
                 <input type="number" value={`${wage}`} onChange={editWage} className="bg-light-grey w-15" />

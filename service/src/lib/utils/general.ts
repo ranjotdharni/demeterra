@@ -66,6 +66,8 @@ export function parseRawJobSummary(raw: RawJobSummary): JobSummary {
     return {
         job: {
             jobId: raw.jobId,
+            locationId: raw.locationId,
+            employeeId: raw.employeeId,
             dateOf: raw.dateOf,
             hoursWorked: raw.hoursWorked,
             rideCost: raw.rideCost,
@@ -139,6 +141,34 @@ export function deepCopyDateGroupedJobSummaries(input: DateGroupedJobSummaries):
     ))}
 }
 
+export function duplicateDateGroupedJobSummaries(input: DateGroupedJobSummaries): DateGroupedJobSummaries {
+    return {
+        id: uuidv4(),
+        dateOf: new Date(input.dateOf),
+        summaries: input.summaries.map(summary => ({
+            job: {
+                jobId: uuidv4(),
+                locationId: summary.job.locationId,
+                employeeId: summary.job.employeeId,
+                dateOf: new Date(summary.job.dateOf),
+                hoursWorked: summary.job.hoursWorked,
+                rideCost: summary.job.rideCost,
+                wage: summary.job.wage,
+            },
+            employee: {
+                employeeId: summary.employee.employeeId,
+                name: summary.employee.name,
+                dateCreated: new Date(summary.employee.dateCreated),
+            },
+            location: {
+                locationId: summary.location.locationId,
+                name: summary.location.name,
+                dateCreated: new Date(summary.location.dateCreated),
+            }
+        } as JobSummary
+    ))}
+}
+
 export function deepCopyDateGroupedJobSummariesArray(input: DateGroupedJobSummaries[]): DateGroupedJobSummaries[] {
     return input.map(item => {
         return deepCopyDateGroupedJobSummaries(item)
@@ -159,4 +189,21 @@ export function convertSummariesToJobs(input: JobSummary[]): Job[] {
     return input.map(summary => {
         return summary.job
     })
+}
+
+export function hasDuplicateDates(jobs: Job[]): boolean {
+    const seenDates = new Set<string>()
+
+    for (const job of jobs) {
+        const date = job.dateOf
+        const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
+
+        if (seenDates.has(key)) {
+            return true // Duplicate found
+        }
+
+        seenDates.add(key)
+    }
+
+    return false // No duplicates
 }
