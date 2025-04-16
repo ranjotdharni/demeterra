@@ -2,6 +2,49 @@ import { DateGroupedJobSummaries, Job, JobSummary, RawJobSummary } from "../type
 import { GenericError, GenericSuccess } from "../types/general"
 import { v4 as uuidv4 } from "uuid"
 
+//=====================================================================================================================================================================================//
+//The below function generates a date string in a given format from a given Date object, the format string paramter is case insensitive                                                //
+//arg1 can be any string but must include the following 3 substrings IN ANY ORDER ANYWHERE IN THE STRING (CASE INSENSITIVE): ('mm' OR 'mmm') AND ('dd' OR 'ddd') AND ('yy' OR 'yyyy')  //
+//=====================================================================================================================================================================================//
+//                                                                                                                                                                                     //
+//FORMAT EXAMPLES: Using a Date object generated on 10/31/2023 (the date at the time of writing this [ Happy Halloween :) ])                                                           // 
+//-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+//  Use         Format           Output                                                                                                                                                //
+// Month    'mm' OR 'MM'     :     10                                                                                                                                                  //
+// Month    'mmm' OR 'MMM'   :    Oct                                                                                                                                                  //
+//  Day     'dd' OR 'DD'     :     31                                                                                                                                                  //
+//  Day     'ddd' OR 'DDD'   :    Tue                                                                                                                                                  //
+// Year     'yy' OR 'YY'     :     23                                                                                                                                                  //
+// Year     'yyyy' OR 'YYYY' :   2023                                                                                                                                                  //
+//                                                                                                                                                                                     //
+//USAGE EXAMPLE: Using a Date object generated on 10/31/2023                                                                                                                           //
+//-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+// dateToFormat('MMM dd, yYyY', new Date()) -> outputs string 'Oct 31, 2023'            !!!!!!!!!!!!!!!!EXAMPLE ON THIS LINE!!!!!!!!!!!!!!!!                                           // 
+//                                                                                                                                                                                     //
+// ^the only reason the above function call's input string uses both upper and lowercase characters is to demonstrate that this function is case insensitive!                          //
+//=====================================================================================================================================================================================//
+export function dateToFormat(arg1: string, arg2: Date): string
+{
+    let str = arg1.toLowerCase().slice()
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+    let mm = (str.includes('mmm') ? 'mmm' : 'mm')
+    let dd = (str.includes('ddd') ? 'ddd' : 'dd')
+    let yy = (str.includes('yyyy') ? 'yyyy' : 'yy')
+
+    str = str.replace(mm, (mm === 'mm' ? (arg2.getMonth() + 1).toString().padStart(2, '0') : monthNames[arg2.getMonth()]))
+    str = str.replace(dd, (dd === 'dd' ? (arg2.getDate()).toString().padStart(2, '0') : dayNames[arg2.getDay()]))
+    str = str.replace(yy, (yy === 'yyyy' ? (arg2.getFullYear()).toString() : arg2.getFullYear().toString().slice(-2)))
+
+    return str
+}
+
+export function parseLocalDateFromInputValue(value: string): Date {
+    const [year, month, day] = value.split('-').map(Number)
+    return new Date(year, month - 1, day)
+}
+
 export function newError(message: string): GenericError {
     return { error: true, message: message } as GenericError
 }

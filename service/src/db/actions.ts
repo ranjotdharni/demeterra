@@ -273,8 +273,8 @@ export async function dbModifyJob(job: Job, connection?: Connection): Promise<Ge
     const conn = connection ? connection : await createConnection(dbConfig)
 
     try {
-        let query: string = "UPDATE Job SET hoursWorked = ?, rideCost = ?, wage = ? WHERE jobId = ?"
-        let params: (string | number)[] = [job.hoursWorked, job.rideCost, job.wage, job.jobId]
+        let query: string = "UPDATE Job SET dateOf = ?, hoursWorked = ?, rideCost = ?, wage = ? WHERE jobId = ?"
+        let params: (string | number)[] = [dateToSQLDate(job.dateOf), job.hoursWorked, job.rideCost, job.wage, job.jobId]
         let response: [QueryResult, FieldPacket[]] | QueryError = await conn.execute<QueryResult>(query, params)
 
         if (((response as unknown) as QueryError).code !== undefined) {

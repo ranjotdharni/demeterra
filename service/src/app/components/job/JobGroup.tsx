@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid"
 import Job from "./Job"
 import { ChangeEvent, MouseEvent, useEffect, useState } from "react"
 import { X } from "lucide-react"
+import { dateToFormat, parseLocalDateFromInputValue } from "@/lib/utils/general"
 
 export interface JobGroupProps {
     location: Location
@@ -13,13 +14,14 @@ export interface JobGroupProps {
     employees: Employee[]
     wage: number
     rideCost: number
+    editDate: (newDate: Date) => void
     addJob: (add: JobSummary) => void
     editJob: (edit: JobSummary) => void
     removeJob: (remove: JobSummary) => void
     removeGroup: () => void
 }
 
-export default function JobGroup({ location, dateOf, group, employees, wage, rideCost, addJob, editJob, removeJob, removeGroup } : JobGroupProps) {
+export default function JobGroup({ location, dateOf, group, employees, wage, rideCost, editDate, addJob, editJob, removeJob, removeGroup } : JobGroupProps) {
     const filteredEmployees: Employee[] = employees.filter(e => group.find(g => g.employee.employeeId === e.employeeId) === undefined)
     const [currentSelection, setCurrentSelection] = useState<string>("")
 
@@ -103,7 +105,9 @@ export default function JobGroup({ location, dateOf, group, employees, wage, rid
             </button>
 
             <div className="min-w-60 p-2 border border-light-grey rounded-lg space-y-2 space-x-2">
-                <h3 className="text-xl">{new Date(dateOf).toDateString()}</h3>
+                <h3 className="text-xl">
+                    <input type="date" value={dateToFormat("YYYY-MM-DD", new Date(dateOf))} onChange={e => { editDate(parseLocalDateFromInputValue(e.target.value)) }} />
+                </h3>
                 <label>Wage: </label>
                 <input type="number" value={`${wage}`} onChange={editWage} className="bg-light-grey w-15" />
                 <label>Ride Cost:</label>

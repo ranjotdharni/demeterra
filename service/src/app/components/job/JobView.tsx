@@ -22,7 +22,7 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
     const [jobGroupsHardCopy, setJobGroupsHardCopy] = useState<DateGroupedJobSummaries[]>(deepCopyDateGroupedJobSummariesArray(jobsAtLocation))
     const [jobGroups, setJobGroups] = useState<DateGroupedJobSummaries[]>(deepCopyDateGroupedJobSummariesArray(jobsAtLocation))
     const [employees, setEmployees] = useState<Employee[]>(allEmployees)
-    const [newDate, setNewDate] = useState<string>(new Date().toString())
+    // const [newDate, setNewDate] = useState<string>(new Date().toString())
 
     const [addedGroups, setAddedGroups] = useState<DateGroupedJobSummaries[]>([])
     const [modifiedGroups, setModifiedGroups] = useState<DateGroupedJobSummaries[]>([])
@@ -30,16 +30,62 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
     const [deletedSummaries, setDeletedSummaries] = useState<JobSummary[]>([])
 
     function addGroup() {
-        const dateOf = new Date(newDate)
         const updatedAddedGroups: DateGroupedJobSummaries[] = [
             ...addedGroups,
             {
                 id: uuidv4(),
-                dateOf: dateOf,
+                dateOf: new Date(),
                 summaries: []
             }
         ]
         setAddedGroups(updatedAddedGroups)
+    }
+
+    function editDate(id: string): (newDate: Date) => void {
+        return (newDate: Date) => {
+            const existingGroupIndex = jobGroups.findIndex(j => j.id === id)
+            const addedGroupIndex = addedGroups.findIndex(j => j.id === id)
+            const modifiedGroupIndex = modifiedGroups.findIndex(j => j.id === id)
+
+            if (existingGroupIndex !== -1) {
+                const updatedSummaries: DateGroupedJobSummaries = jobGroups[existingGroupIndex]
+                const updatedModifiedGroup: DateGroupedJobSummaries[] = [...modifiedGroups]
+                const updatedExistingGroup: DateGroupedJobSummaries[] = [...jobGroups]
+
+                updatedExistingGroup.splice(existingGroupIndex, 1)
+                
+                updatedSummaries.dateOf = newDate
+                updatedSummaries.summaries = updatedSummaries.summaries.map(s => { return {...s, job: { ...s.job, dateOf: newDate }} })
+                updatedModifiedGroup.push(updatedSummaries)
+                
+                setJobGroups(updatedExistingGroup)
+                setModifiedGroups(updatedModifiedGroup)
+            }
+            else if (addedGroupIndex !== -1) {
+                const updatedSummaries: DateGroupedJobSummaries = addedGroups[addedGroupIndex]
+                const updatedAddedGroup: DateGroupedJobSummaries[] = [...addedGroups]
+
+                updatedSummaries.dateOf = newDate
+                updatedSummaries.summaries = updatedSummaries.summaries.map(s => { return {...s, job: { ...s.job, dateOf: newDate }} })
+                updatedAddedGroup[addedGroupIndex] = updatedSummaries
+
+                setAddedGroups(updatedAddedGroup)
+            }
+            else if (modifiedGroupIndex !== -1) {
+                const updatedSummaries: DateGroupedJobSummaries = modifiedGroups[modifiedGroupIndex]
+                const updatedModifiedGroup: DateGroupedJobSummaries[] = [...modifiedGroups]
+
+                updatedSummaries.dateOf = newDate
+                updatedSummaries.summaries = updatedSummaries.summaries.map(s => { return {...s, job: { ...s.job, dateOf: newDate }} })
+                updatedModifiedGroup[modifiedGroupIndex] = updatedSummaries
+
+                setModifiedGroups(updatedModifiedGroup)
+            }
+            else {
+                console.log("Could not find Job Group")
+                return
+            }
+        }
     }
 
     function modifyAddJob(id: string): (addedJob: JobSummary) => void {
@@ -285,12 +331,11 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
                 adding: adding,
                 modifying: editing,
                 removing: removing
+            })}).then(middle => {
+                return middle.json()
+            }).then(response => {
+                return response
             })
-        }).then(middle => {
-            return middle.json()
-        }).then(response => {
-            return response
-        })
 
         if ((result as GenericError).error) {
             console.log("Fatal Error When Refetching Changes")
@@ -309,8 +354,8 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
     }
 
     // Uncomment this block for testing in the console
-
-    /*function debugTest() {
+    
+    function debugTest() {
         console.log("--- Test Results ---")
         console.log("Existing: ", jobGroups)
         console.log("Added: ", addedGroups)
@@ -321,14 +366,13 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
 
     useEffect(() => {
         debugTest()
-    }, [addedGroups, jobGroups, modifiedGroups, deletedGroups, deletedSummaries])*/
+    }, [addedGroups, jobGroups, modifiedGroups, deletedGroups, deletedSummaries])
 
     return (
         <section className="p-4">
             <header className="w-full border-b border-light-grey p-1 flex flex-row space-x-2">
                 <h1 className="text-4xl text-green">{location.name}</h1>
-                <input type="date" value={newDate.toString()} onChange={e => { setNewDate(e.target.value) }} />
-                <button onClick={addGroup} className="px-2 bg-light-grey rounded-md">Add Date</button>
+                <button onClick={addGroup} className="px-2 bg-light-grey rounded-md">Add Group</button>
                 <button onClick={undoChanges} className="px-2 bg-light-grey rounded-md">Cancel</button>
                 <button onClick={onSave} className="px-2 bg-light-grey rounded-md">Save</button>
             </header>
@@ -343,6 +387,7 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
                             employees={employees} 
                             wage={group.summaries.length === 0 ? DEFAULT_WAGE : group.summaries[0].job.wage}
                             rideCost={group.summaries.length === 0 ? DEFAULT_RIDE_COST : group.summaries[0].job.rideCost}
+                            editDate={editDate(group.id)}
                             addJob={modifyAddJob(group.id)}
                             editJob={modifyEditJob(group.id)}
                             removeJob={modifyRemoveJob(group.id)}
