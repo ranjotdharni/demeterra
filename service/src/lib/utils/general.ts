@@ -40,9 +40,18 @@ export function dateToFormat(arg1: string, arg2: Date): string
     return str
 }
 
+// This function is generally reserved for client-side use. Be wary 
+// of what the logic is doing specifically if used elsewhere!
 export function parseLocalDateFromInputValue(value: string): Date {
     const [year, month, day] = value.split('-').map(Number)
-    return new Date(year, month - 1, day)
+
+    const now = new Date()
+    const hours = now.getHours()
+    const minutes = now.getMinutes()
+    const seconds = now.getSeconds()
+    const milliseconds = now.getMilliseconds()
+
+    return new Date(year, month - 1, day, hours, minutes, seconds, milliseconds)
 }
 
 export function newError(message: string): GenericError {
