@@ -1,4 +1,4 @@
-import { Connection, createConnection, FieldPacket, QueryError, QueryResult } from "mysql2/promise"
+import { Connection, createConnection, FieldPacket, QueryError, QueryResult, ResultSetHeader } from "mysql2/promise"
 import { GenericError, GenericSuccess } from "@/lib/types/general"
 import { Session, Location, Employee, Job, JobSummary, RawJobSummary } from "@/lib/types/db"
 import { newError, newSuccess, parseRawJobSummaries } from "@/lib/utils/general"
@@ -281,6 +281,9 @@ export async function dbModifyJob(job: Job, connection?: Connection): Promise<Ge
             console.log(response)
             return newError("Failed to Modify Job(s)")
         }
+        
+        if (((response as [QueryResult, FieldPacket[]])[0] as ResultSetHeader).affectedRows === 0) 
+            return await dbAddJob(job, connection)
 
         if (!connection)
             conn.end()
@@ -335,7 +338,7 @@ export async function dbAddModifyRemoveJobs(add: Job[], modify: Job[], remove: J
         if (failures.length !== 0)
             console.log(`Failures (Add):\n${failures}`)
 
-        if (successes.length === add.length)
+        if (add.length !== 0 && successes.length === add.length)
             console.log("All to-be Added Jobs Added Successfully")
 
         failures = []
@@ -355,7 +358,7 @@ export async function dbAddModifyRemoveJobs(add: Job[], modify: Job[], remove: J
         if (failures.length !== 0)
             console.log(`Failures (Modify):\n${failures}`)
 
-        if (successes.length === add.length)
+        if (modify.length !== 0 && successes.length === modify.length)
             console.log("All to-be Modified Jobs Modified Successfully")
 
         failures = []
@@ -375,7 +378,7 @@ export async function dbAddModifyRemoveJobs(add: Job[], modify: Job[], remove: J
         if (failures.length !== 0)
             console.log(`Failures (Remove):\n${failures}`)
 
-        if (successes.length === add.length)
+        if (remove.length !== 0 && successes.length === remove.length)
             console.log("All to-be Removed Jobs Removed Successfully")
 
         conn.end()

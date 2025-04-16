@@ -23,7 +23,7 @@ export interface JobGroupProps {
 
 export default function JobGroup({ location, dateOf, group, employees, wage, rideCost, editDate, addJob, editJob, removeJob, removeGroup } : JobGroupProps) {
     const filteredEmployees: Employee[] = employees.filter(e => group.find(g => g.employee.employeeId === e.employeeId) === undefined)
-    const [currentSelection, setCurrentSelection] = useState<string>("")
+    const [currentSelection, setCurrentSelection] = useState<string>(filteredEmployees.length !== 0 ? filteredEmployees[0].employeeId : "")
 
     function onClick(event: MouseEvent<HTMLButtonElement>) {
         event.preventDefault()
@@ -92,11 +92,11 @@ export default function JobGroup({ location, dateOf, group, employees, wage, rid
         })
     }
 
-    useEffect(() => {
+    /*useEffect(() => {
         if (filteredEmployees.length !== 0) {
             setCurrentSelection(filteredEmployees[0].employeeId)
         }
-    }, [filteredEmployees])
+    }, [filteredEmployees])*/
 
     return (
         <li className="p-2 border rounded border-light-grey flex flex-row items-center space-x-2">
