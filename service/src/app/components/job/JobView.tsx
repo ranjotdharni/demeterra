@@ -331,7 +331,8 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
         }
     }
 
-    function undoChanges() {
+    function undoChanges(event: MouseEvent<HTMLButtonElement>) {
+        event.preventDefault()
         setAddedGroups([])
         setModifiedGroups([])
         setDeletedGroups([])
