@@ -5,7 +5,7 @@ Web app to help manage employee hours.
 - [x] Edit Dates
 - [x] Copy Groups
 - [x] Nav Bar
-- [ ] Loader
+- [x] Loader
 - [ ] Error Modal
 - [ ] Statistics
 - [ ] Notes
