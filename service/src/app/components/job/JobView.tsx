@@ -345,15 +345,15 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
         if (addedGroups.length === 0 && modifiedGroups.length === 0 && deletedGroups.length === 0 && deletedSummaries.length === 0)
             return
 
-        const adding: Job[] = convertSummariesToJobs(flattenDateGroupedJobSummariesToJobSummaries(addedGroups))
-        const editing: Job[] = convertSummariesToJobs(flattenDateGroupedJobSummariesToJobSummaries(modifiedGroups))
-        const removing: Job[] = [...convertSummariesToJobs(flattenDateGroupedJobSummariesToJobSummaries(deletedGroups)), ...convertSummariesToJobs(deletedSummaries)]
-
         // duplicate dates are not allowed, create another pseudo-location using indexes to track multiple groups at same location
-        if (hasDuplicateDates([...adding, ...editing])) {
+        if (hasDuplicateDates([...jobGroups, ...addedGroups, ...modifiedGroups])) {
             console.log("Duplicate Dates are not Allowed")
             return
         }
+
+        const adding: Job[] = convertSummariesToJobs(flattenDateGroupedJobSummariesToJobSummaries(addedGroups))
+        const editing: Job[] = convertSummariesToJobs(flattenDateGroupedJobSummariesToJobSummaries(modifiedGroups))
+        const removing: Job[] = [...convertSummariesToJobs(flattenDateGroupedJobSummariesToJobSummaries(deletedGroups)), ...convertSummariesToJobs(deletedSummaries)]
 
         const result: GenericError | JobViewProps = await fetch(`${process.env.NEXT_PUBLIC_ORIGIN}${API_EDIT}`, {
             method: "POST",
@@ -386,7 +386,7 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
     }
 
     // Uncomment this block for testing in the console
-    
+    /*
     function debugTest() {
         console.log("--- Test Results ---")
         console.log("Existing: ", jobGroups)
@@ -399,16 +399,17 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
     useEffect(() => {
         debugTest()
     }, [addedGroups, jobGroups, modifiedGroups, deletedGroups, deletedSummaries])
+    */
 
     return (
-        <section className="p-4">
-            <header className="w-full border-b border-light-grey p-1 flex flex-row space-x-2">
+        <section className="p-4 w-auto space-y-2">
+            <header className="w-auto border-b-2 border-light-grey p-1 inline-flex flex-row space-x-2">
                 <h1 className="text-4xl text-green">{location.name}</h1>
-                <button onClick={addGroup} className="px-2 bg-light-grey rounded-md">Add Group</button>
-                <button onClick={undoChanges} className="px-2 bg-light-grey rounded-md">Cancel</button>
-                <button onClick={onSave} className="px-2 bg-light-grey rounded-md">Save</button>
+                <button onClick={addGroup} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Add Group</button>
+                <button onClick={undoChanges} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Cancel</button>
+                <button onClick={onSave} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Save</button>
             </header>
-            <ul className="space-y-2 p-2">
+            <ul className="space-y-2 p-2 w-auto inline-flex flex-col">
                 {
                     [...jobGroups, ...modifiedGroups, ...addedGroups].sort((a, b) => a.dateOf.getTime() - b.dateOf.getTime()).map(group => {
                         return <JobGroup 

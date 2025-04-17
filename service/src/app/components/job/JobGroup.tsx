@@ -108,12 +108,12 @@ export default function JobGroup({ location, dateOf, group, employees, wage, rid
     }, [filteredEmployees, currentSelection])
 
     return (
-        <li className="p-2 border rounded border-light-grey flex flex-row items-center space-x-2">
+        <li className="p-2 border rounded border-light-grey inline-flex flex-row items-center space-x-2 w-auto">
             <button onClick={removeGroup} className="hover:text-red-800 hover:cursor-pointer">
                 <X />
             </button>
 
-            <div className="min-w-60 p-2 border border-light-grey rounded-lg space-y-2 space-x-2">
+            <div className="min-w-120 p-2 border border-light-grey rounded-lg space-y-2 space-x-2">
                 <h3 className="text-xl flex justify-between items-center space-x-2">
                     <input type="date" value={dateToFormat("YYYY-MM-DD", new Date(dateOf))} onChange={e => { editDate(parseLocalDateFromInputValue(e.target.value)) }} />
                     <button onClick={createDuplicate} className="hover:text-green hover:cursor-pointer">

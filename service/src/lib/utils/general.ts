@@ -191,7 +191,7 @@ export function convertSummariesToJobs(input: JobSummary[]): Job[] {
     })
 }
 
-export function hasDuplicateDates(jobs: Job[]): boolean {
+export function hasDuplicateDates(jobs: DateGroupedJobSummaries[]): boolean {
     const seenDates = new Set<string>()
 
     for (const job of jobs) {
