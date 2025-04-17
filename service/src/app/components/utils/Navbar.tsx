@@ -7,6 +7,7 @@ import { MouseEvent, useState } from "react"
 import { LOGO } from "@/lib/constants/client"
 import Cookies from "js-cookie"
 import { GenericError, GenericSuccess } from "@/lib/types/general"
+import Loader from "./Loader"
 
 interface RouteProps {
     name: string
@@ -46,6 +47,7 @@ export default function Navbar() {
     const pathname = usePathname()
     
     const [dynamicTailWind, setDynamicTailwind] = useState<string>("-left-80")
+    const [loader, setLoader] = useState<boolean>(false)
 
     function onOpen(event: MouseEvent<HTMLButtonElement>) {
         event.preventDefault()
@@ -61,38 +63,51 @@ export default function Navbar() {
         const username: string | undefined = Cookies.get("username")
         const token: string | undefined = Cookies.get("token")
 
-        // if cookies don't exist on client, server won't authenticate you; server's default behavior also handles this case
-        if (username === undefined || token === undefined) {
-            router.push(PAGE_LOGIN)
-            return
-        }
+        setLoader(true)
 
-        // if auth cookies exist, hit the log out endpoint
-        const response: GenericSuccess | GenericError = await fetch(`${process.env.NEXT_PUBLIC_ORIGIN}${API_LOGOUT}`, {
-            method: "POST",
-            body: JSON.stringify({
-                username: username,
-                token: token
-            })}).then(middle => {
-                return middle.json()
-            }).then(response => {
-                return response
+        try {
+            // if cookies don't exist on client, server won't authenticate you; server's default behavior also handles this case
+            if (username === undefined || token === undefined) {
+                setLoader(false)
+                setDynamicTailwind("-left-80")
+                router.push(PAGE_LOGIN)
+                return
             }
-        )
 
-        // Error check the log out request
-        if ((response as GenericError).error) {
-            console.log(response.message)
-            return
+            // if auth cookies exist, hit the log out endpoint
+            const response: GenericSuccess | GenericError = await fetch(`${process.env.NEXT_PUBLIC_ORIGIN}${API_LOGOUT}`, {
+                method: "POST",
+                body: JSON.stringify({
+                    username: username,
+                    token: token
+                })}).then(middle => {
+                    return middle.json()
+                }).then(response => {
+                    return response
+                }
+            )
+
+            // Error check the log out request
+            if ((response as GenericError).error) {
+                console.log(response.message)
+                return
+            }
+
+            if ((response as GenericSuccess).success) {
+                console.log(response.message)
+                // remember to remove old auth cookies (although the server will handle the case of stale cookies, this is best practice)
+                Cookies.remove("username", { path: "/" })
+                Cookies.remove("token", { path: "/" })
+                setLoader(false)
+                setDynamicTailwind("-left-80")
+                router.push(PAGE_LOGIN)
+            }
+        }
+        catch (error) {
+            console.log(error)
         }
 
-        if ((response as GenericSuccess).success) {
-            console.log(response.message)
-            // remember to remove old auth cookies (although the server will handle the case of stale cookies, this is best practice)
-            Cookies.remove("username", { path: "/" })
-            Cookies.remove("token", { path: "/" })
-            router.push(PAGE_LOGIN)
-        }
+        setLoader(false)
     }
 
     return (
@@ -121,7 +136,12 @@ export default function Navbar() {
                 </div>
 
                 <div className="w-full h-[5%] flex flex-row justify-end items-center">
-                    <button onClick={logOut} className="hover:text-red-800 hover:cursor-pointer flex flex-row space-x-2">
+                    <button disabled={loader} onClick={logOut} className="hover:text-red-800 hover:cursor-pointer flex flex-row space-x-2">
+                        {
+                            loader ? 
+                            <Loader tailwindWidth="w-6" /> :
+                            <></>
+                        }
                         <p>Log Out</p>
                         <LogOut />
                     </button>

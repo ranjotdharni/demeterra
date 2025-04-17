@@ -7,6 +7,7 @@ import { MouseEvent, useEffect, useState } from "react"
 import { convertSummariesToJobs, deepCopyDateGroupedJobSummaries, deepCopyDateGroupedJobSummariesArray, duplicateDateGroupedJobSummaries, flattenDateGroupedJobSummariesToJobSummaries, hasDuplicateDates } from "@/lib/utils/general"
 import { GenericError, GenericSuccess } from "@/lib/types/general"
 import { API_EDIT } from "@/lib/constants/routes"
+import Loader from "../utils/Loader"
 
 export interface JobViewProps {
     locationOfJobs: Location
@@ -22,7 +23,7 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
     const [jobGroupsHardCopy, setJobGroupsHardCopy] = useState<DateGroupedJobSummaries[]>(deepCopyDateGroupedJobSummariesArray(jobsAtLocation))
     const [jobGroups, setJobGroups] = useState<DateGroupedJobSummaries[]>(deepCopyDateGroupedJobSummariesArray(jobsAtLocation))
     const [employees, setEmployees] = useState<Employee[]>(allEmployees)
-    // const [newDate, setNewDate] = useState<string>(new Date().toString())
+    const [loader, setLoader] = useState<boolean>(false)
 
     const [addedGroups, setAddedGroups] = useState<DateGroupedJobSummaries[]>([])
     const [modifiedGroups, setModifiedGroups] = useState<DateGroupedJobSummaries[]>([])
@@ -343,11 +344,16 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
     async function onSave(event: MouseEvent<HTMLButtonElement>) {
         event.preventDefault()
 
-        if (addedGroups.length === 0 && modifiedGroups.length === 0 && deletedGroups.length === 0 && deletedSummaries.length === 0)
+        setLoader(true)
+
+        if (addedGroups.length === 0 && modifiedGroups.length === 0 && deletedGroups.length === 0 && deletedSummaries.length === 0) {
+            setLoader(false)
             return
+        }
 
         // duplicate dates are not allowed, create another pseudo-location using indexes to track multiple groups at same location
         if (hasDuplicateDates([...jobGroups, ...addedGroups, ...modifiedGroups])) {
+            setLoader(false)
             console.log("Duplicate Dates are not Allowed")
             return
         }
@@ -356,34 +362,41 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
         const editing: Job[] = convertSummariesToJobs(flattenDateGroupedJobSummariesToJobSummaries(modifiedGroups))
         const removing: Job[] = [...convertSummariesToJobs(flattenDateGroupedJobSummariesToJobSummaries(deletedGroups)), ...convertSummariesToJobs(deletedSummaries)]
 
-        const result: GenericError | JobViewProps = await fetch(`${process.env.NEXT_PUBLIC_ORIGIN}${API_EDIT}`, {
-            method: "POST",
-            body: JSON.stringify({
-                locationId: location.locationId,
-                adding: adding,
-                modifying: editing,
-                removing: removing
-            })}).then(middle => {
-                return middle.json()
-            }).then(response => {
-                return response
+        try {
+            const result: GenericError | JobViewProps = await fetch(`${process.env.NEXT_PUBLIC_ORIGIN}${API_EDIT}`, {
+                method: "POST",
+                body: JSON.stringify({
+                    locationId: location.locationId,
+                    adding: adding,
+                    modifying: editing,
+                    removing: removing
+                })}).then(middle => {
+                    return middle.json()
+                }).then(response => {
+                    return response
+                }
+            )
+    
+            if ((result as GenericError).error) {
+                console.log("Fatal Error When Refetching Changes")
+                return
             }
-        )
-
-        if ((result as GenericError).error) {
-            console.log("Fatal Error When Refetching Changes")
-            return
+    
+            setLocation((result as JobViewProps).locationOfJobs)
+            setJobGroupsHardCopy(deepCopyDateGroupedJobSummariesArray((result as JobViewProps).jobsAtLocation))
+            setJobGroups(deepCopyDateGroupedJobSummariesArray((result as JobViewProps).jobsAtLocation))
+            setEmployees((result as JobViewProps).allEmployees)
+    
+            setAddedGroups([])
+            setModifiedGroups([])
+            setDeletedGroups([])
+            setDeletedSummaries([])
+        }
+        catch (error) {
+            console.log(error)
         }
 
-        setLocation((result as JobViewProps).locationOfJobs)
-        setJobGroupsHardCopy(deepCopyDateGroupedJobSummariesArray((result as JobViewProps).jobsAtLocation))
-        setJobGroups(deepCopyDateGroupedJobSummariesArray((result as JobViewProps).jobsAtLocation))
-        setEmployees((result as JobViewProps).allEmployees)
-
-        setAddedGroups([])
-        setModifiedGroups([])
-        setDeletedGroups([])
-        setDeletedSummaries([])
+        setLoader(false)
     }
 
     // Uncomment this block for testing in the console
@@ -410,27 +423,33 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
                 <button onClick={undoChanges} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Cancel</button>
                 <button onClick={onSave} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Save</button>
             </header>
-            <ul className="space-y-2 p-2 w-auto inline-flex flex-col">
-                {
-                    [...jobGroups, ...modifiedGroups, ...addedGroups].sort((a, b) => a.dateOf.getTime() - b.dateOf.getTime()).map(group => {
-                        return <JobGroup 
-                            key={group.id} 
-                            location={locationOfJobs}
-                            group={group.summaries} 
-                            dateOf={group.dateOf} 
-                            employees={employees} 
-                            wage={group.summaries.length === 0 ? DEFAULT_WAGE : group.summaries[0].job.wage}
-                            rideCost={group.summaries.length === 0 ? DEFAULT_RIDE_COST : group.summaries[0].job.rideCost}
-                            duplicate={duplicateGroup(group.id)}
-                            editDate={editDate(group.id)}
-                            addJob={modifyAddJob(group.id)}
-                            editJob={modifyEditJob(group.id)}
-                            removeJob={modifyRemoveJob(group.id)}
-                            removeGroup={deleteGroup(group.id)}
-                        />
-                    })
-                }
-            </ul>
+            {
+                loader ? 
+                <div className="h-60 aspect-square flex flex-col justify-center items-end">
+                    <Loader />
+                </div> : 
+                <ul className="space-y-2 p-2 w-auto inline-flex flex-col">
+                    {
+                        [...jobGroups, ...modifiedGroups, ...addedGroups].sort((a, b) => a.dateOf.getTime() - b.dateOf.getTime()).map(group => {
+                            return <JobGroup 
+                                key={group.id} 
+                                location={locationOfJobs}
+                                group={group.summaries} 
+                                dateOf={group.dateOf} 
+                                employees={employees} 
+                                wage={group.summaries.length === 0 ? DEFAULT_WAGE : group.summaries[0].job.wage}
+                                rideCost={group.summaries.length === 0 ? DEFAULT_RIDE_COST : group.summaries[0].job.rideCost}
+                                duplicate={duplicateGroup(group.id)}
+                                editDate={editDate(group.id)}
+                                addJob={modifyAddJob(group.id)}
+                                editJob={modifyEditJob(group.id)}
+                                removeJob={modifyRemoveJob(group.id)}
+                                removeGroup={deleteGroup(group.id)}
+                            />
+                        })
+                    }
+                </ul>
+            }
         </section>
     )
 }

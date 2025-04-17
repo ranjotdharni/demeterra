@@ -3,22 +3,30 @@
 import { API_EMPLOYEE, PAGE_EMPLOYEE } from "@/lib/constants/routes"
 import { useEffect, useState } from "react"
 import { Employee } from "@/lib/types/db"
+import Loader from "../components/utils/Loader"
 
 export default function Page() {
     const [employees, setEmployees] = useState<Employee[]>([])
     const [newEmployee, setNewEmployee] = useState<string>("")
+    const [loader, setLoader] = useState<boolean>(false)
 
     async function getEmployees() {
+        setLoader(true)
+
         await fetch(`${process.env.NEXT_PUBLIC_ORIGIN}${API_EMPLOYEE}`).then(middle => {
             return middle.json()
         }).then(response => {
             setEmployees(response as Employee[])
+        }).finally(() => {
+            setLoader(false)
         })
     }
 
     async function addEmployee() {
         if (newEmployee.length < 1 || newEmployee.length > 64)
             return
+
+        setLoader(true)
 
         await fetch(`${process.env.NEXT_PUBLIC_ORIGIN}${API_EMPLOYEE}`, {
             method: "POST",
@@ -31,6 +39,8 @@ export default function Page() {
             const returnedEmployee: Employee = response as Employee
             setEmployees([...employees, returnedEmployee])
             setNewEmployee("")
+        }).finally(() => {
+            setLoader(false)
         })
     }
 
@@ -46,19 +56,25 @@ export default function Page() {
                 <button onClick={() => addEmployee()} className="p-1 border border-light-grey rounded hover:cursor-pointer">Add Employee</button>
             </header>
 
-            <ul className="py-2 space-y-4">
-                {
-                    employees.map(employee => {
-                        return (
-                            <li key={employee.employeeId} className="w-auto h-auto px-4 py-2 border border-light-grey rounded-lg flex flex-row items-center space-x-2">
-                                <h2 className="text-2xl">{employee.name}</h2>
-                                <a href={`${PAGE_EMPLOYEE}/${employee.employeeId}`} className="hover:cursor-pointer py-1 px-4 text-foreground border border-light-grey rounded-lg">View</a>
-                                <button className="hover:cursor-pointer py-1 px-4 text-foreground border border-light-grey rounded-lg">Delete</button>
-                            </li>
-                        )
-                    })
-                }
-            </ul>
+            {
+                loader ? 
+                <div className="w-full h-60 flex flex-col justify-end items-center">
+                    <Loader />
+                </div> : 
+                <ul className="py-2 space-y-4">
+                    {
+                        employees.map(employee => {
+                            return (
+                                <li key={employee.employeeId} className="w-auto h-auto px-4 py-2 border border-light-grey rounded-lg flex flex-row items-center space-x-2">
+                                    <h2 className="text-2xl">{employee.name}</h2>
+                                    <a href={`${PAGE_EMPLOYEE}/${employee.employeeId}`} className="hover:cursor-pointer py-1 px-4 text-foreground border border-light-grey rounded-lg">View</a>
+                                    <button className="hover:cursor-pointer py-1 px-4 text-foreground border border-light-grey rounded-lg">Delete</button>
+                                </li>
+                            )
+                        })
+                    }
+                </ul>
+            }
         </section>
     )
 }

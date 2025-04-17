@@ -3,22 +3,30 @@
 import { API_LOCATION, PAGE_JOB } from "@/lib/constants/routes"
 import { useEffect, useState } from "react"
 import { Location } from "@/lib/types/db"
+import Loader from "../components/utils/Loader"
 
 export default function Page() {
     const [locations, setLocations] = useState<Location[]>([])
     const [newLocation, setNewLocation] = useState<string>("")
+    const [loader, setLoader] = useState<boolean>(false)
 
     async function getLocations() {
+        setLoader(true)
+
         await fetch(`${process.env.NEXT_PUBLIC_ORIGIN}${API_LOCATION}`).then(middle => {
             return middle.json()
         }).then(response => {
             setLocations(response as Location[])
+        }).finally(() => {
+            setLoader(false)
         })
     }
 
     async function addLocation() {
         if (newLocation.length < 1 || newLocation.length > 64)
             return
+
+        setLoader(true)
 
         await fetch(`${process.env.NEXT_PUBLIC_ORIGIN}${API_LOCATION}`, {
             method: "POST",
@@ -31,6 +39,8 @@ export default function Page() {
             const returnedLocation: Location = response as Location
             setLocations([...locations, returnedLocation])
             setNewLocation("")
+        }).finally(() => {
+            setLoader(false)
         })
     }
 
@@ -46,19 +56,25 @@ export default function Page() {
                 <button onClick={() => addLocation()} className="p-1 border border-light-grey rounded hover:cursor-pointer">Add Location</button>
             </header>
 
-            <ul className="py-2 space-y-4">
-                {
-                    locations.map(location => {
-                        return (
-                            <li key={location.locationId} className="w-auto h-auto px-4 py-2 border border-light-grey rounded-lg flex flex-row items-center space-x-2">
-                                <h2 className="text-2xl">{location.name}</h2>
-                                <a href={`${PAGE_JOB}/${location.locationId}`} className="hover:cursor-pointer py-1 px-4 text-foreground border border-light-grey rounded-lg">View</a>
-                                <button className="hover:cursor-pointer py-1 px-4 text-foreground border border-light-grey rounded-lg">Delete</button>
-                            </li>
-                        )
-                    })
-                }
-            </ul>
+            {
+                loader ? 
+                <div className="w-full h-60 flex flex-col justify-end items-center">
+                    <Loader />
+                </div> : 
+                <ul className="py-2 space-y-4">
+                    {
+                        locations.map(location => {
+                            return (
+                                <li key={location.locationId} className="w-auto h-auto px-4 py-2 border border-light-grey rounded-lg flex flex-row items-center space-x-2">
+                                    <h2 className="text-2xl">{location.name}</h2>
+                                    <a href={`${PAGE_JOB}/${location.locationId}`} className="hover:cursor-pointer py-1 px-4 text-foreground border border-light-grey rounded-lg">View</a>
+                                    <button className="hover:cursor-pointer py-1 px-4 text-foreground border border-light-grey rounded-lg">Delete</button>
+                                </li>
+                            )
+                        })
+                    }
+                </ul>
+            }
         </section>
     )
 }
