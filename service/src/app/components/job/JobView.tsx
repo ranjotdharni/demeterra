@@ -403,7 +403,7 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
     */
 
     return (
-        <section className="p-4 w-auto space-y-2">
+        <section className="p-4 w-auto space-y-2 flex flex-col">
             <header className="w-auto border-b-2 border-light-grey p-1 inline-flex flex-row space-x-2">
                 <h1 className="text-4xl text-green">{location.name}</h1>
                 <button onClick={addGroup} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Add Group</button>
