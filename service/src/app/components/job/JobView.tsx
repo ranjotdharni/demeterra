@@ -366,7 +366,8 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
                 return middle.json()
             }).then(response => {
                 return response
-            })
+            }
+        )
 
         if ((result as GenericError).error) {
             console.log("Fatal Error When Refetching Changes")

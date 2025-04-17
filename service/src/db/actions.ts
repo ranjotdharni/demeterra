@@ -69,6 +69,28 @@ export async function dbGetSession(username: string, token: string): Promise<Ses
     }
 }
 
+export async function dbClearSession(username: string, token: string): Promise<GenericSuccess | GenericError> {
+    const conn = await createConnection(dbConfig)
+
+    try {
+        let query: string = "DELETE FROM Session WHERE username = ? AND token = ?"
+        let params: (string | number)[] = [username, token]
+        let response: [QueryResult, FieldPacket[]] | QueryError = await conn.execute<QueryResult>(query, params)
+
+        if (((response as unknown) as QueryError).code !== undefined) {
+            console.log(response)
+            return newError("Failed to Clear Session")
+        }
+
+        conn.end()
+        return newSuccess("Session Cleared")
+    }
+    catch (error) {
+        console.log(error)
+        return newError("Failed to Clear Session")
+    }
+}
+
 // Locations
 export async function dbGetLocations(): Promise<Location[] | GenericError> {
     const conn = await createConnection(dbConfig)

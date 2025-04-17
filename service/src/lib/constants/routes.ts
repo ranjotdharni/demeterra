@@ -1,6 +1,7 @@
 
 export const API_EMPLOYEE: string = "/api/employee"
 export const API_LOCATION: string = "/api/location"
+export const API_LOGOUT: string = "/api/logout"
 export const API_LOGIN: string = "/api/login"
 export const API_EDIT: string = "/api/edit"
 
