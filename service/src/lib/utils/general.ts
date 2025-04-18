@@ -208,16 +208,20 @@ export function hasDuplicateDates(jobs: DateGroupedJobSummaries[]): boolean {
     return false // No duplicates
 }
 
+export function arrayToTriplets<T>()
+
 export function calculateStatistics(data: DateGroupedJobSummaries[]): SummaryStatistics {
     let dataMap = new Map<string, EmployeeStatistics>()
 
     for (let group of data) {
         const summaries: JobSummary[] = group.summaries
 
+        // add each employees earnings data or replace if it already exists in map
         for (let summary of summaries) {
             if (dataMap.has(summary.job.employeeId)) {
                 const existingStats: EmployeeStatistics = dataMap.get(summary.job.employeeId)!
 
+                // Remember, wage and ride cost can be job specific (based on group)!
                 const hours: number = existingStats.hours + summary.job.hoursWorked
                 const earnings: number = existingStats.earnings + (summary.job.hoursWorked * summary.job.wage)
                 const rideCost: number = existingStats.rideCost + summary.job.rideCost
@@ -255,6 +259,7 @@ export function calculateStatistics(data: DateGroupedJobSummaries[]): SummarySta
     let totalRideCost: number = 0
     let totalRevenue: number = 0
 
+    // add up totals
     employeeEarnings.forEach(employeeStats => {
         totalHours = totalHours + employeeStats.hours
         totalEarnings = totalEarnings + employeeStats.earnings
