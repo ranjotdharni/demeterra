@@ -1,5 +1,5 @@
 import { DateGroupedJobSummaries, Job, JobSummary, RawJobSummary } from "../types/db"
-import { GenericError, GenericSuccess } from "../types/general"
+import { EmployeeStatistics, GenericError, GenericSuccess, SummaryStatistics } from "../types/general"
 import { v4 as uuidv4 } from "uuid"
 
 //=====================================================================================================================================================================================//
@@ -206,4 +206,67 @@ export function hasDuplicateDates(jobs: DateGroupedJobSummaries[]): boolean {
     }
 
     return false // No duplicates
+}
+
+export function calculateStatistics(data: DateGroupedJobSummaries[]): SummaryStatistics {
+    let dataMap = new Map<string, EmployeeStatistics>()
+
+    for (let group of data) {
+        const summaries: JobSummary[] = group.summaries
+
+        for (let summary of summaries) {
+            if (dataMap.has(summary.job.employeeId)) {
+                const existingStats: EmployeeStatistics = dataMap.get(summary.job.employeeId)!
+
+                const hours: number = existingStats.hours + summary.job.hoursWorked
+                const earnings: number = existingStats.earnings + (summary.job.hoursWorked * summary.job.wage)
+                const rideCost: number = existingStats.rideCost + summary.job.rideCost
+                const revenue: number = existingStats.revenue + ((summary.job.hoursWorked * summary.job.wage) - summary.job.rideCost)
+
+                const newStats: EmployeeStatistics = {
+                    employee: summary.employee,
+                    hours: hours,
+                    earnings: earnings,
+                    rideCost: rideCost,
+                    revenue: revenue
+                }
+
+                dataMap.set(summary.job.employeeId, newStats)
+            }
+            else {
+                const stats: EmployeeStatistics = {
+                    employee: summary.employee,
+                    hours: summary.job.hoursWorked,
+                    earnings: summary.job.hoursWorked * summary.job.wage,
+                    rideCost: summary.job.rideCost,
+                    revenue: (summary.job.hoursWorked * summary.job.wage) - summary.job.rideCost
+                }
+
+                dataMap.set(summary.job.employeeId, stats)
+            }
+        }
+
+    }
+
+    const employeeEarnings: EmployeeStatistics[] = Array.from(dataMap.values())
+
+    let totalHours: number = 0
+    let totalEarnings: number = 0
+    let totalRideCost: number = 0
+    let totalRevenue: number = 0
+
+    employeeEarnings.forEach(employeeStats => {
+        totalHours = totalHours + employeeStats.hours
+        totalEarnings = totalEarnings + employeeStats.earnings
+        totalRideCost = totalRideCost + employeeStats.rideCost
+        totalRevenue = totalRevenue + employeeStats.revenue
+    })
+
+    return {
+        totalHours: totalHours,
+        totalEarnings: totalEarnings,
+        totalRideCost: totalRideCost,
+        totalRevenue: totalRevenue,
+        employeeEarnings: employeeEarnings
+    }
 }
