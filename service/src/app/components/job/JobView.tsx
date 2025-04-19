@@ -4,8 +4,8 @@ import { DateGroupedJobSummaries, Employee, Job, JobSummary, Location } from "@/
 import { v4 as uuidv4 } from "uuid"
 import JobGroup from "./JobGroup"
 import { MouseEvent, useEffect, useState } from "react"
-import { convertSummariesToJobs, deepCopyDateGroupedJobSummaries, deepCopyDateGroupedJobSummariesArray, duplicateDateGroupedJobSummaries, flattenDateGroupedJobSummariesToJobSummaries, hasDuplicateDates } from "@/lib/utils/general"
-import { GenericError, GenericSuccess } from "@/lib/types/general"
+import { arrayToTriplets, calculateStatistics, convertSummariesToJobs, deepCopyDateGroupedJobSummaries, deepCopyDateGroupedJobSummariesArray, duplicateDateGroupedJobSummaries, flattenDateGroupedJobSummariesToJobSummaries, hasDuplicateDates } from "@/lib/utils/general"
+import { EmployeeStatistics, GenericError, GenericSuccess, SummaryStatistics } from "@/lib/types/general"
 import { API_EDIT } from "@/lib/constants/routes"
 import Loader from "../utils/Loader"
 
@@ -18,6 +18,30 @@ export interface JobViewProps {
 const DEFAULT_WAGE: number = 16.50
 const DEFAULT_RIDE_COST: number = 15.00
 
+function EmployeeStatisticsRow({ data } : { data: EmployeeStatistics[] }) {
+    return (
+        <li>
+            <ul className="flex flex-row space-x-8">
+                {
+                    data.map((stat, index) => {
+                        return (
+                            <li key={`EMPLOYEE_STATISTIC_ITEM_${index}`}>
+                                <p className="border-b border-light-grey text-green">{`${stat.employee.name}`}</p>
+                                <div className="flex flex-row space-x-2 p-1">
+                                    <p className="border border-light-grey p-1 rounded">{`Hours: ${stat.hours}`}</p>
+                                    <p className="border border-light-grey p-1 rounded">{`Earnings: ${stat.earnings}`}</p>
+                                    <p className="border border-light-grey p-1 rounded">{`Ride Cost: ${stat.rideCost}`}</p>
+                                    <p className="border border-light-grey p-1 rounded">{`Revenue: ${stat.revenue}`}</p>
+                                </div>
+                            </li>
+                        )
+                    })
+                }
+            </ul>
+        </li>
+    )
+}
+
 export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees } : JobViewProps) {
     const [location, setLocation] = useState<Location>(locationOfJobs)
     const [jobGroupsHardCopy, setJobGroupsHardCopy] = useState<DateGroupedJobSummaries[]>(deepCopyDateGroupedJobSummariesArray(jobsAtLocation))
@@ -29,6 +53,8 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
     const [modifiedGroups, setModifiedGroups] = useState<DateGroupedJobSummaries[]>([])
     const [deletedGroups, setDeletedGroups] = useState<DateGroupedJobSummaries[]>([])
     const [deletedSummaries, setDeletedSummaries] = useState<JobSummary[]>([])
+
+    const statistics: SummaryStatistics = calculateStatistics([...jobGroups, ...addedGroups, ...modifiedGroups])
 
     function addGroup() {
         const updatedAddedGroups: DateGroupedJobSummaries[] = [
@@ -417,12 +443,35 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
 
     return (
         <section className="p-4 w-auto space-y-2 inline-flex flex-col">
-            <header className="w-auto border-b-2 border-light-grey p-1 inline-flex flex-row space-x-2">
+            <header className="border-b-2 border-light-grey py-1 px-2 inline-flex flex-row space-x-2" style={{width: "fit-content"}}>
                 <h1 className="text-4xl text-green">{location.name}</h1>
                 <button onClick={addGroup} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Add Group</button>
                 <button onClick={undoChanges} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Cancel</button>
                 <button onClick={onSave} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Save</button>
             </header>
+
+            <div className="p-4 w-auto h-auto inline-flex flex-col space-y-4">
+                <h2 className="text-2xl border-2 rounded-md border-light-grey px-1" style={{width: "fit-content"}}>Statistics</h2>
+                <div className="flex flex-row space-x-2 text-lg">
+                    <p className="border border-light-grey p-1">{`Total Hours: ${statistics.totalHours}`}</p>
+                    <p className="border border-light-grey p-1">{`Total Earnings: ${statistics.totalEarnings}`}</p>
+                    <p className="border border-light-grey p-1">{`Total Ride Cost: ${statistics.totalRideCost}`}</p>
+                    <p className="border border-light-grey p-1">{`Total Revenue: ${statistics.totalRevenue}`}</p>
+                </div>
+
+                <ul className="space-y-4">
+                    {
+                        arrayToTriplets<EmployeeStatistics>(statistics.employeeEarnings).map((row, index) => {
+                            return (
+                                <li key={`EMPLOYEE_STATISTIC_ROW_${index}`}>
+                                    <EmployeeStatisticsRow data={row} />
+                                </li>
+                            )
+                        })
+                    }
+                </ul>
+            </div>
+
             {
                 loader ? 
                 <div className="h-60 aspect-square flex flex-col justify-center items-end">

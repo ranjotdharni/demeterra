@@ -7,7 +7,7 @@ Web app to help manage employee hours.
 - [x] Nav Bar
 - [x] Loader
 - [ ] Error Modal
-- [ ] Statistics
+- [x] Statistics
 - [ ] Notes
 
 ## Notes

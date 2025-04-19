@@ -208,24 +208,30 @@ export function hasDuplicateDates(jobs: DateGroupedJobSummaries[]): boolean {
     return false // No duplicates
 }
 
-export function arrayToTriplets<T>()
+export function arrayToTriplets<T>(arr: T[]): T[][] {
+    const result: T[][] = []
+    for (let i = 0; i < arr.length; i += 3) {
+        result.push(arr.slice(i, i + 3))
+    }
+    return result
+}
 
 export function calculateStatistics(data: DateGroupedJobSummaries[]): SummaryStatistics {
     let dataMap = new Map<string, EmployeeStatistics>()
 
-    for (let group of data) {
+    for (const group of data) {
         const summaries: JobSummary[] = group.summaries
 
         // add each employees earnings data or replace if it already exists in map
-        for (let summary of summaries) {
+        for (const summary of summaries) {
             if (dataMap.has(summary.job.employeeId)) {
                 const existingStats: EmployeeStatistics = dataMap.get(summary.job.employeeId)!
 
                 // Remember, wage and ride cost can be job specific (based on group)!
-                const hours: number = existingStats.hours + summary.job.hoursWorked
-                const earnings: number = existingStats.earnings + (summary.job.hoursWorked * summary.job.wage)
-                const rideCost: number = existingStats.rideCost + summary.job.rideCost
-                const revenue: number = existingStats.revenue + ((summary.job.hoursWorked * summary.job.wage) - summary.job.rideCost)
+                const hours: number = existingStats.hours + Number(summary.job.hoursWorked)
+                const earnings: number = existingStats.earnings + (Number(summary.job.hoursWorked) * Number(summary.job.wage))
+                const rideCost: number = existingStats.rideCost + Number(summary.job.rideCost)
+                const revenue: number = existingStats.revenue + ((Number(summary.job.hoursWorked) * Number(summary.job.wage)) - Number(summary.job.rideCost))
 
                 const newStats: EmployeeStatistics = {
                     employee: summary.employee,
@@ -240,10 +246,10 @@ export function calculateStatistics(data: DateGroupedJobSummaries[]): SummarySta
             else {
                 const stats: EmployeeStatistics = {
                     employee: summary.employee,
-                    hours: summary.job.hoursWorked,
+                    hours: Number(summary.job.hoursWorked),
                     earnings: summary.job.hoursWorked * summary.job.wage,
-                    rideCost: summary.job.rideCost,
-                    revenue: (summary.job.hoursWorked * summary.job.wage) - summary.job.rideCost
+                    rideCost: Number(summary.job.rideCost),
+                    revenue: (summary.job.hoursWorked * summary.job.wage) - Number(summary.job.rideCost)
                 }
 
                 dataMap.set(summary.job.employeeId, stats)
