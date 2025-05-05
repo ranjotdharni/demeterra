@@ -1,14 +1,14 @@
 "use client"
 
 import { DateGroupedJobSummaries, Employee, JobSummary, Location } from "@/lib/types/db"
-import { v4 as uuidv4 } from "uuid"
 import StatisticsGroup from "./StatisticsGroup"
 import { ChangeEvent, MouseEvent, useState } from "react"
 import { arrayToTriplets, calculateStatistics, dateToFormat, deepCopyDateGroupedJobSummariesArray, duplicateDateGroupedJobSummaries, parseLocalDateFromInputValue } from "@/lib/utils/general"
-import { EmployeeStatistics, SummaryStatistics } from "@/lib/types/general"
+import { EmployeeStatistics, GenericError, SummaryStatistics } from "@/lib/types/general"
 import Loader from "../utils/Loader"
 import { DEFAULT_RIDE_COST, DEFAULT_WAGE } from "@/lib/constants/client"
 import { X } from "lucide-react"
+import { API_STATISTICS } from "@/lib/constants/routes"
 
 export interface StatisticsViewProps {
     locationsOfJobs: Location[]
@@ -95,7 +95,7 @@ export default function StatisticsView({ locationsOfJobs, jobs, allEmployees } :
         }
     }
 
-    function addGroup() {
+    /*function addGroup() {
         const updatedAddedGroups: DateGroupedJobSummaries[] = [
             ...addedGroups,
             {
@@ -105,7 +105,7 @@ export default function StatisticsView({ locationsOfJobs, jobs, allEmployees } :
             }
         ]
         setAddedGroups(updatedAddedGroups)
-    }
+    }*/
 
     function editDate(id: string): (newDate: Date) => void {
         return (newDate: Date) => {
@@ -419,7 +419,44 @@ export default function StatisticsView({ locationsOfJobs, jobs, allEmployees } :
     async function applyFilters(event: MouseEvent<HTMLButtonElement>) {
         event.preventDefault()
 
+        setLoader(true)
 
+        const body = {
+            locations: locations,
+            from: from,
+            to: to
+        }
+
+        const result: GenericError | StatisticsViewProps = await fetch(`${process.env.NEXT_PUBLIC_ORIGIN}${API_STATISTICS}`, {
+            method: "POST",
+            body: JSON.stringify(
+                body
+            )}).then(middle => {
+                return middle.json()
+            }).then(response => {
+                return response
+            }
+        )
+
+        if ((result as GenericError).error) {
+            console.log("Fatal Error When Applying Changes:", (result as GenericError).message)
+            return
+        }
+
+        const props: StatisticsViewProps = result as StatisticsViewProps
+
+        setJobGroupsHardCopy(deepCopyDateGroupedJobSummariesArray(props.jobs))
+        setJobGroups(deepCopyDateGroupedJobSummariesArray(props.jobs))
+        // NEVER RESET JOB LOCATIONS OR JOBS BECAUSE FILTERS AND UI ARE DEPENDENT ON THESE VALUES
+        // AND RESETTING THEM HERE WILL CAUSE ONLY FILTERED VALUES TO DISPLAY, NOT ALL EXISTING 
+        // VALUES (WHICH IS WHAT IS REQUIRED FOR THIS COMPONENT TO FUNCTION PROPERLY)!
+
+        setAddedGroups([])
+        setModifiedGroups([])
+        setDeletedGroups([])
+        setDeletedSummaries([])
+
+        setLoader(false)
     }
 
     // Uncomment this block for testing in the console
@@ -442,10 +479,9 @@ export default function StatisticsView({ locationsOfJobs, jobs, allEmployees } :
         <section className="p-4 w-auto space-y-2 inline-flex flex-col">
             <header className="border-b-2 border-light-grey py-1 px-2 inline-flex flex-row space-x-2" style={{width: "fit-content"}}>
                 <h1 className="text-4xl text-green">Statistics</h1>
-                <button onClick={addGroup} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Add Group</button>
-                <button onClick={undoChanges} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Undo Group Changes</button>
+                <button onClick={undoChanges} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Undo Changes</button>
                 <button onClick={clearFilters} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Clear Filters</button>
-                <button className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Apply Filters</button>
+                <button onClick={applyFilters} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Apply</button>
             </header>
 
             <div className="py-1 px-2 w-auto inline-flex flex-col">

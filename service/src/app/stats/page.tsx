@@ -1,7 +1,6 @@
-import JobView, { JobViewProps } from "@/app/components/job/JobView"
 import { GenericError } from "@/lib/types/general"
 import NotFound from "@/app/404"
-import { fetchJobViewProps, fetchStatisticsViewProps } from "@/lib/utils/db"
+import { fetchStatisticsViewProps } from "@/lib/utils/db"
 import StatisticsView, { StatisticsViewProps } from "../components/statistics/StatisticsView"
 
 export default async function Page() {

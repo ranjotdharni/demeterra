@@ -1,6 +1,6 @@
 "use client"
 
-import { Employee, Location, JobSummary, Job as JobType, DateGroupedJobSummaries } from "@/lib/types/db"
+import { Employee, Location, JobSummary, Job as JobType } from "@/lib/types/db"
 import { v4 as uuidv4 } from "uuid"
 import Statistic from "./Statistic"
 import { ChangeEvent, MouseEvent, useEffect, useState } from "react"
@@ -116,6 +116,7 @@ export default function StatisticsGroup({ location, dateOf, group, employees, wa
             <div className="min-w-120 p-2 border border-light-grey rounded-lg space-y-2 space-x-2">
                 <h3 className="text-xl flex justify-between items-center space-x-2">
                     <input type="date" value={dateToFormat("YYYY-MM-DD", new Date(dateOf))} onChange={e => { editDate(parseLocalDateFromInputValue(e.target.value)) }} />
+                    <p className="text-sm">{location.name}</p>
                     <button onClick={createDuplicate} className="hover:text-green hover:cursor-pointer">
                         <Copy />
                     </button>

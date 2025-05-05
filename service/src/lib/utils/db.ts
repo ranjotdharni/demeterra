@@ -22,6 +22,13 @@ export function dateToSQLDate(date: Date | string): string {
     return result.toISOString().slice(0, 19).replace('T', ' ')
 }
 
+// returns a date that is the input date but with its time value set to the end of that day
+export function dateToEndOfDay(input: Date): Date {
+    const result: Date = new Date(input)
+    result.setHours(23, 59, 59, 999)
+    return result
+}
+
 export async function fetchJobViewProps(locationId: string): Promise<JobViewProps | GenericError> {
     const locationResult: Location[] | GenericError = await dbGetLocationById(locationId)
     

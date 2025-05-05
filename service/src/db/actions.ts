@@ -2,7 +2,7 @@ import { Connection, createConnection, FieldPacket, QueryError, QueryResult, Res
 import { GenericError, GenericSuccess } from "@/lib/types/general"
 import { Session, Location, Employee, Job, JobSummary, RawJobSummary } from "@/lib/types/db"
 import { newError, newSuccess, parseRawJobSummaries } from "@/lib/utils/general"
-import { dateToSQLDate } from "@/lib/utils/db"
+import { dateToEndOfDay, dateToSQLDate } from "@/lib/utils/db"
 import { v4 as uuidv4 } from "uuid"
 import { dbConfig } from "./config"
 
@@ -136,16 +136,15 @@ export async function dbGetLocationById(locationId: string): Promise<Location[] 
 }
 
 export async function dbGetLocationsById(locations?: string[]): Promise<Location[] | GenericError> {
-    if (!locations)
+    if (!locations || locations.length === 0)
         return await dbGetLocations()
 
     const locationArrayString = `(${locations.map(loc => `'${loc}'`).join(",")})`
     const conn = await createConnection(dbConfig)
 
     try {
-        let query: string = "SELECT * FROM Location WHERE locationId IN ?"
-        let params: (string | number)[] = [locationArrayString]
-        let response: [QueryResult, FieldPacket[]] | QueryError = await conn.execute<Location[]>(query, params)
+        let query: string = `SELECT * FROM Location WHERE locationId IN ${locationArrayString}`
+        let response: [QueryResult, FieldPacket[]] | QueryError = await conn.execute<Location[]>(query)
 
         if (((response as unknown) as QueryError).code !== undefined) {
             console.log(response)
@@ -296,16 +295,40 @@ export async function dbGetJobSummariesByLocation(locationId: string): Promise<J
 
 export async function dbGetJobSummariesByLocationsAndDates(locations?: string[], from?: Date, to?: Date): Promise<JobSummary[] | GenericError> {
     let locationArrayString = `(${locations?.map(loc => `'${loc}'`).join(",")})`
+    let params: (string | number)[] = []
+
+    // Had to do this this way because this function would just keep recognizing input parameters as defined even when they were explicitly undefined, idk
+    let fromValid = false
+    let toValid = false
 
     const conn = await createConnection(dbConfig)
 
     try {
-        let searchConfig = (!locations && !from && !to ? "" : ` WHERE${locations ? " Job.locationId IN ?" : ""}${from ? " AND Job.dateOf >= ?" : ""}${to ? " AND Job.dateOf <= ?" : ""}`)
+        if (from && from !== undefined) {
+            try {
+                const dateResult = dateToSQLDate(from)
+                params.push(dateResult)
+                fromValid = true
+            }
+            catch (error) {
+                // do nothing
+            }
+        }
+
+        if (to && to !== undefined) {
+            try {
+                const dateResult = dateToSQLDate(dateToEndOfDay(to))
+                params.push(dateResult)
+                toValid = true
+            }
+            catch (error) {
+                // do nothing
+            }
+        }
+
+        let searchConfig = ((!locations || locations.length === 0) && !fromValid && !toValid ? "" : ` WHERE${locations && locations.length !== 0 ? ` Job.locationId IN ${locationArrayString}` : ""}${fromValid ? ` ${locations && locations.length !== 0 ? "AND " : ""}Job.dateOf >= ?` : ""}${toValid ? ` ${fromValid || (locations && locations.length !== 0) ? "AND " : ""}Job.dateOf <= ?` : ""}`)
         let query: string = `SELECT Job.jobId as jobId, Job.dateOf as dateOf, Job.hoursWorked as hoursWorked, Job.rideCost as rideCost, Job.wage as wage, Employee.employeeId as employeeId, Employee.name as employeeName, Employee.dateCreated as employeeDateCreated, Location.locationId as locationId, Location.name as locationName, Location.dateCreated as locationDateCreated FROM Job JOIN Employee ON Job.employeeId = Employee.employeeId JOIN Location ON Job.locationId = Location.locationId${searchConfig} ORDER BY Job.dateOf`
-        let params: (string | number)[] = [];
-        (locations ? params.push(locationArrayString) : () => {});
-        (from ? params.push(dateToSQLDate(from)) : () => {});
-        (to ? params.push(dateToSQLDate(to)) : () => {});
+
         let response: [QueryResult, FieldPacket[]] | QueryError = await conn.execute<RawJobSummary[]>(query, params)
 
         if (((response as unknown) as QueryError).code !== undefined) {
