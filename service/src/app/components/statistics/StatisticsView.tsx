@@ -1,13 +1,13 @@
 "use client"
 
-import { DateGroupedJobSummaries, Employee, Job, JobSummary, Location } from "@/lib/types/db"
+import { DateGroupedJobSummaries, Employee, JobSummary, Location } from "@/lib/types/db"
 import { v4 as uuidv4 } from "uuid"
 import StatisticsGroup from "./StatisticsGroup"
-import { MouseEvent, useEffect, useState } from "react"
-import { arrayToTriplets, calculateStatistics, convertSummariesToJobs, deepCopyDateGroupedJobSummaries, deepCopyDateGroupedJobSummariesArray, duplicateDateGroupedJobSummaries, flattenDateGroupedJobSummariesToJobSummaries, hasDuplicateDates } from "@/lib/utils/general"
-import { EmployeeStatistics, GenericError, GenericSuccess, SummaryStatistics } from "@/lib/types/general"
-import { API_EDIT } from "@/lib/constants/routes"
+import { MouseEvent, useState } from "react"
+import { arrayToTriplets, calculateStatistics, deepCopyDateGroupedJobSummariesArray, duplicateDateGroupedJobSummaries } from "@/lib/utils/general"
+import { EmployeeStatistics, SummaryStatistics } from "@/lib/types/general"
 import Loader from "../utils/Loader"
+import { DEFAULT_RIDE_COST, DEFAULT_WAGE } from "@/lib/constants/client"
 
 export interface StatisticsViewProps {
     jobsByLocation: {
@@ -16,9 +16,6 @@ export interface StatisticsViewProps {
     }[]
     allEmployees: Employee[]
 }
-
-const DEFAULT_WAGE: number = 16.50
-const DEFAULT_RIDE_COST: number = 15.00
 
 function EmployeeStatisticsRow({ data } : { data: EmployeeStatistics[] }) {
     return (
@@ -376,65 +373,6 @@ export default function JobView({ jobsByLocation, allEmployees } : StatisticsVie
         setJobGroups(deepCopyDateGroupedJobSummariesArray(jobGroupsHardCopy))
     }
 
-    async function onSave(event: MouseEvent<HTMLButtonElement>) {
-        /*event.preventDefault()
-
-        setLoader(true)
-
-        if (addedGroups.length === 0 && modifiedGroups.length === 0 && deletedGroups.length === 0 && deletedSummaries.length === 0) {
-            setLoader(false)
-            return
-        }
-
-        // duplicate dates are not allowed, create another pseudo-location using indexes to track multiple groups at same location
-        if (hasDuplicateDates([...jobGroups, ...addedGroups, ...modifiedGroups])) {
-            setLoader(false)
-            console.log("Duplicate Dates are not Allowed")
-            return
-        }
-
-        const adding: Job[] = convertSummariesToJobs(flattenDateGroupedJobSummariesToJobSummaries(addedGroups))
-        const editing: Job[] = convertSummariesToJobs(flattenDateGroupedJobSummariesToJobSummaries(modifiedGroups))
-        const removing: Job[] = [...convertSummariesToJobs(flattenDateGroupedJobSummariesToJobSummaries(deletedGroups)), ...convertSummariesToJobs(deletedSummaries)]
-
-        try {
-            const result: GenericError | JobViewProps = await fetch(`${process.env.NEXT_PUBLIC_ORIGIN}${API_EDIT}`, {
-                method: "POST",
-                body: JSON.stringify({
-                    locationId: location.locationId,
-                    adding: adding,
-                    modifying: editing,
-                    removing: removing
-                })}).then(middle => {
-                    return middle.json()
-                }).then(response => {
-                    return response
-                }
-            )
-    
-            if ((result as GenericError).error) {
-                console.log("Fatal Error When Refetching Changes")
-                return
-            }
-    
-            setLocation((result as JobViewProps).locationOfJobs)
-            setJobGroupsHardCopy(deepCopyDateGroupedJobSummariesArray((result as JobViewProps).jobsAtLocation))
-            setJobGroups(deepCopyDateGroupedJobSummariesArray((result as JobViewProps).jobsAtLocation))
-            setEmployees((result as JobViewProps).allEmployees)
-    
-            setAddedGroups([])
-            setModifiedGroups([])
-            setDeletedGroups([])
-            setDeletedSummaries([])
-        }
-        catch (error) {
-            console.log(error)
-        }
-
-        setLoader(false)
-        */
-    }
-
     // Uncomment this block for testing in the console
     /*
     function debugTest() {
@@ -457,7 +395,6 @@ export default function JobView({ jobsByLocation, allEmployees } : StatisticsVie
                 <h1 className="text-4xl text-green">Statistics</h1>
                 <button onClick={addGroup} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Add Group</button>
                 <button onClick={undoChanges} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Cancel</button>
-                <button onClick={onSave} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Save</button>
             </header>
 
             <div className="p-4 w-auto h-auto inline-flex flex-col space-y-4">

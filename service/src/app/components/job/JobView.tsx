@@ -3,11 +3,12 @@
 import { DateGroupedJobSummaries, Employee, Job, JobSummary, Location } from "@/lib/types/db"
 import { v4 as uuidv4 } from "uuid"
 import JobGroup from "./JobGroup"
-import { MouseEvent, useEffect, useState } from "react"
-import { arrayToTriplets, calculateStatistics, convertSummariesToJobs, deepCopyDateGroupedJobSummaries, deepCopyDateGroupedJobSummariesArray, duplicateDateGroupedJobSummaries, flattenDateGroupedJobSummariesToJobSummaries, hasDuplicateDates } from "@/lib/utils/general"
-import { EmployeeStatistics, GenericError, GenericSuccess, SummaryStatistics } from "@/lib/types/general"
+import { MouseEvent, useState } from "react"
+import { arrayToTriplets, calculateStatistics, convertSummariesToJobs, deepCopyDateGroupedJobSummariesArray, duplicateDateGroupedJobSummaries, flattenDateGroupedJobSummariesToJobSummaries, hasDuplicateDates } from "@/lib/utils/general"
+import { EmployeeStatistics, GenericError, SummaryStatistics } from "@/lib/types/general"
 import { API_EDIT } from "@/lib/constants/routes"
 import Loader from "../utils/Loader"
+import { DEFAULT_RIDE_COST, DEFAULT_WAGE } from "@/lib/constants/client"
 
 export interface JobViewProps {
     locationOfJobs: Location
@@ -15,8 +16,6 @@ export interface JobViewProps {
     allEmployees: Employee[]
 }
 
-const DEFAULT_WAGE: number = 16.50
-const DEFAULT_RIDE_COST: number = 14.00
 
 function EmployeeStatisticsRow({ data } : { data: EmployeeStatistics[] }) {
     return (
