@@ -135,6 +135,32 @@ export async function dbGetLocationById(locationId: string): Promise<Location[] 
     }
 }
 
+export async function dbGetLocationsById(locations?: string[]): Promise<Location[] | GenericError> {
+    if (!locations)
+        return await dbGetLocations()
+
+    const locationArrayString = `(${locations.map(loc => `'${loc}'`).join(",")})`
+    const conn = await createConnection(dbConfig)
+
+    try {
+        let query: string = "SELECT * FROM Location WHERE locationId IN ?"
+        let params: (string | number)[] = [locationArrayString]
+        let response: [QueryResult, FieldPacket[]] | QueryError = await conn.execute<Location[]>(query, params)
+
+        if (((response as unknown) as QueryError).code !== undefined) {
+            console.log(response)
+            return newError("Failed to Retrieve Locations by IDs")
+        }
+
+        conn.end()
+        return response[0] as Location[]
+    }
+    catch (error) {
+        console.log(error)
+        return newError("Failed to Retrieve Locations by IDs")
+    }
+}
+
 export async function dbAddLocation(name: string): Promise<Location[] | GenericError> {
     const conn = await createConnection(dbConfig)
 
@@ -265,6 +291,34 @@ export async function dbGetJobSummariesByLocation(locationId: string): Promise<J
     catch (error) {
         console.log(error)
         return newError("Faied to Retrieve Jobs Summary")
+    }
+}
+
+export async function dbGetJobSummariesByLocationsAndDates(locations?: string[], from?: Date, to?: Date): Promise<JobSummary[] | GenericError> {
+    let locationArrayString = `(${locations?.map(loc => `'${loc}'`).join(",")})`
+
+    const conn = await createConnection(dbConfig)
+
+    try {
+        let searchConfig = (!locations && !from && !to ? "" : ` WHERE${locations ? " Job.locationId IN ?" : ""}${from ? " AND Job.dateOf >= ?" : ""}${to ? " AND Job.dateOf <= ?" : ""}`)
+        let query: string = `SELECT Job.jobId as jobId, Job.dateOf as dateOf, Job.hoursWorked as hoursWorked, Job.rideCost as rideCost, Job.wage as wage, Employee.employeeId as employeeId, Employee.name as employeeName, Employee.dateCreated as employeeDateCreated, Location.locationId as locationId, Location.name as locationName, Location.dateCreated as locationDateCreated FROM Job JOIN Employee ON Job.employeeId = Employee.employeeId JOIN Location ON Job.locationId = Location.locationId${searchConfig} ORDER BY Job.dateOf`
+        let params: (string | number)[] = [];
+        (locations ? params.push(locationArrayString) : () => {});
+        (from ? params.push(dateToSQLDate(from)) : () => {});
+        (to ? params.push(dateToSQLDate(to)) : () => {});
+        let response: [QueryResult, FieldPacket[]] | QueryError = await conn.execute<RawJobSummary[]>(query, params)
+
+        if (((response as unknown) as QueryError).code !== undefined) {
+            console.log(response)
+            return newError("Failed to Retrieve Jobs Summaries by Locations and Dates")
+        }
+
+        conn.end()
+        return parseRawJobSummaries(response[0] as RawJobSummary[])
+    }
+    catch (error) {
+        console.log(error)
+        return newError("Failed to Retrieve Jobs Summaries by Locations and Dates")
     }
 }
 

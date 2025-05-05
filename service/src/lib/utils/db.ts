@@ -1,8 +1,9 @@
 import { JobViewProps } from "@/app/components/job/JobView"
 import { GenericError } from "../types/general"
 import { DateGroupedJobSummaries, Employee, JobSummary, Location } from "../types/db"
-import { dbGetEmployees, dbGetJobSummariesByLocation, dbGetLocationById } from "@/db/actions"
+import { dbGetEmployees, dbGetJobSummariesByLocation, dbGetJobSummariesByLocationsAndDates, dbGetLocationById, dbGetLocationsById } from "@/db/actions"
 import { groupJobSummariesByDate } from "./general"
+import { StatisticsViewProps } from "@/app/components/statistics/StatisticsView"
 
 /**
  * Convert TypeScript Date object to a MySQL DATETIME string.
@@ -46,4 +47,37 @@ export async function fetchJobViewProps(locationId: string): Promise<JobViewProp
         jobsAtLocation: jobs,
         allEmployees: employees as Employee[]
     } as JobViewProps
+}
+
+export async function fetchStatisticsViewProps(locations?: string[], from?: Date, to?: Date): Promise<StatisticsViewProps | GenericError> {
+    const locationsResult: Location[] | GenericError = await dbGetLocationsById(locations)
+    
+    if ((locationsResult as GenericError).error)
+        return { error: true, message: "Location IDs are not valid" } as GenericError
+    
+    const locationsData: Location[] = (locationsResult as Location[])
+
+    const jobsResult: JobSummary[] | GenericError = await dbGetJobSummariesByLocationsAndDates(locations, from, to)
+
+    if ((jobsResult as GenericError).error)
+        return { error: true, message: "Failed to load jobs at these Locations and Dates" }
+
+    const jobs: DateGroupedJobSummaries[] =  groupJobSummariesByDate(jobsResult as JobSummary[])
+
+    const employees: Employee[] | GenericError = await dbGetEmployees()
+
+    if ((employees as GenericError).error)
+        return { error: true, message: "Could not retrieve Employees" }
+
+    const data = locationsData.map((location: Location) => {
+        return {
+            locationOfJobs: location,
+            jobsAtLocation: jobs.filter(job => job.summaries[0].location.locationId === location.locationId)
+        }
+    })
+
+    return {
+        jobsByLocation: data,
+        allEmployees: employees as Employee[]
+    }
 }

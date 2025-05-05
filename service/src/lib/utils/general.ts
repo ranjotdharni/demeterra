@@ -113,6 +113,7 @@ export function groupJobSummariesByDate(jobSummaries: JobSummary[]): DateGrouped
     })
 }
 
+// a deep copy of the input object (including id)
 export function deepCopyDateGroupedJobSummaries(input: DateGroupedJobSummaries): DateGroupedJobSummaries {
     return {
         id: input.id,
@@ -141,6 +142,7 @@ export function deepCopyDateGroupedJobSummaries(input: DateGroupedJobSummaries):
     ))}
 }
 
+// a new Date Grouped Job Summaries List (has its own id) but with the attributes of the input object
 export function duplicateDateGroupedJobSummaries(input: DateGroupedJobSummaries): DateGroupedJobSummaries {
     return {
         id: uuidv4(),

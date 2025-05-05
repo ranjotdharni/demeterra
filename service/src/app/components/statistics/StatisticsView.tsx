@@ -2,21 +2,23 @@
 
 import { DateGroupedJobSummaries, Employee, Job, JobSummary, Location } from "@/lib/types/db"
 import { v4 as uuidv4 } from "uuid"
-import JobGroup from "./JobGroup"
+import StatisticsGroup from "./StatisticsGroup"
 import { MouseEvent, useEffect, useState } from "react"
 import { arrayToTriplets, calculateStatistics, convertSummariesToJobs, deepCopyDateGroupedJobSummaries, deepCopyDateGroupedJobSummariesArray, duplicateDateGroupedJobSummaries, flattenDateGroupedJobSummariesToJobSummaries, hasDuplicateDates } from "@/lib/utils/general"
 import { EmployeeStatistics, GenericError, GenericSuccess, SummaryStatistics } from "@/lib/types/general"
 import { API_EDIT } from "@/lib/constants/routes"
 import Loader from "../utils/Loader"
 
-export interface JobViewProps {
-    locationOfJobs: Location
-    jobsAtLocation: DateGroupedJobSummaries[]
+export interface StatisticsViewProps {
+    jobsByLocation: {
+        locationOfJobs: Location
+        jobsAtLocation: DateGroupedJobSummaries[]
+    }[]
     allEmployees: Employee[]
 }
 
 const DEFAULT_WAGE: number = 16.50
-const DEFAULT_RIDE_COST: number = 14.00
+const DEFAULT_RIDE_COST: number = 15.00
 
 function EmployeeStatisticsRow({ data } : { data: EmployeeStatistics[] }) {
     return (
@@ -42,10 +44,17 @@ function EmployeeStatisticsRow({ data } : { data: EmployeeStatistics[] }) {
     )
 }
 
-export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees } : JobViewProps) {
-    const [location, setLocation] = useState<Location>(locationOfJobs)
-    const [jobGroupsHardCopy, setJobGroupsHardCopy] = useState<DateGroupedJobSummaries[]>(deepCopyDateGroupedJobSummariesArray(jobsAtLocation))
-    const [jobGroups, setJobGroups] = useState<DateGroupedJobSummaries[]>(deepCopyDateGroupedJobSummariesArray(jobsAtLocation))
+export default function JobView({ jobsByLocation, allEmployees } : StatisticsViewProps) {
+    const rawData = jobsByLocation.map(jbl => deepCopyDateGroupedJobSummariesArray(jbl.jobsAtLocation))
+    let data: DateGroupedJobSummaries[] = []
+
+    rawData.forEach(item => {
+        data = [...data, ...item]
+    })
+
+    const [locations, setLocations] = useState<Location[]>(jobsByLocation.map(jbl => jbl.locationOfJobs))
+    const [jobGroupsHardCopy, setJobGroupsHardCopy] = useState<DateGroupedJobSummaries[]>(deepCopyDateGroupedJobSummariesArray(data))
+    const [jobGroups, setJobGroups] = useState<DateGroupedJobSummaries[]>(deepCopyDateGroupedJobSummariesArray(data))
     const [employees, setEmployees] = useState<Employee[]>(allEmployees)
     const [loader, setLoader] = useState<boolean>(false)
 
@@ -368,7 +377,7 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
     }
 
     async function onSave(event: MouseEvent<HTMLButtonElement>) {
-        event.preventDefault()
+        /*event.preventDefault()
 
         setLoader(true)
 
@@ -423,6 +432,7 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
         }
 
         setLoader(false)
+        */
     }
 
     // Uncomment this block for testing in the console
@@ -444,7 +454,7 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
     return (
         <section className="p-4 w-auto space-y-2 inline-flex flex-col">
             <header className="border-b-2 border-light-grey py-1 px-2 inline-flex flex-row space-x-2" style={{width: "fit-content"}}>
-                <h1 className="text-4xl text-green">{location.name}</h1>
+                <h1 className="text-4xl text-green">Statistics</h1>
                 <button onClick={addGroup} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Add Group</button>
                 <button onClick={undoChanges} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Cancel</button>
                 <button onClick={onSave} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Save</button>
@@ -478,9 +488,9 @@ export default function JobView({ locationOfJobs, jobsAtLocation, allEmployees }
                 <ul className="space-y-2 p-2 w-auto inline-flex flex-col">
                     {
                         [...jobGroups, ...modifiedGroups, ...addedGroups].sort((a, b) => a.dateOf.getTime() - b.dateOf.getTime()).map(group => {
-                            return <JobGroup 
+                            return <StatisticsGroup 
                                 key={group.id} 
-                                location={locationOfJobs}
+                                location={group.summaries[0].location}
                                 group={group.summaries} 
                                 dateOf={group.dateOf} 
                                 employees={employees} 

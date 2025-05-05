@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation"
 import { AlignJustify, LogOut, X } from "lucide-react"
-import { API_LOGOUT, PAGE_EMPLOYEE, PAGE_HOME, PAGE_LOCATION, PAGE_LOGIN, PUBLIC_ROUTES } from "@/lib/constants/routes"
+import { API_LOGOUT, PAGE_EMPLOYEE, PAGE_HOME, PAGE_LOCATION, PAGE_LOGIN, PAGE_STATISTICS, PUBLIC_ROUTES } from "@/lib/constants/routes"
 import { MouseEvent, useState } from "react"
 import { LOGO } from "@/lib/constants/client"
 import Cookies from "js-cookie"
@@ -28,6 +28,10 @@ const routes: RouteProps[] = [
     {
         name: "Employees",
         href: PAGE_EMPLOYEE
+    },
+    {
+        name: "Statistics",
+        href: PAGE_STATISTICS
     }
 ]
 

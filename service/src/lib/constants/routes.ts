@@ -7,6 +7,7 @@ export const API_EDIT: string = "/api/edit"
 
 export const PAGE_LOCATION: string = "/location"
 export const PAGE_EMPLOYEE: string = "/employee"
+export const PAGE_STATISTICS: string = "/stats"
 export const PAGE_LOGIN: string = "/login"  // not in public routes to handle existing session redirect, see middleware.ts
 export const PAGE_HOME: string = "/home"
 export const PAGE_LANDING: string = "/"
