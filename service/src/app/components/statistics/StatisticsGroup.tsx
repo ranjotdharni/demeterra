@@ -22,7 +22,7 @@ export interface StatisticsGroupProps {
     removeGroup: () => void
 }
 
-export default function JobGroup({ location, dateOf, group, employees, wage, rideCost, duplicate, editDate, addJob, editJob, removeJob, removeGroup } : StatisticsGroupProps) {
+export default function StatisticsGroup({ location, dateOf, group, employees, wage, rideCost, duplicate, editDate, addJob, editJob, removeJob, removeGroup } : StatisticsGroupProps) {
     const filteredEmployees: Employee[] = employees.filter(e => group.find(g => g.employee.employeeId === e.employeeId) === undefined)
     const [currentSelection, setCurrentSelection] = useState<string>("")
 

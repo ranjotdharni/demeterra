@@ -11,6 +11,6 @@ export default async function Page() {
         return <NotFound message={(result as GenericError).message} />
 
     return (
-        <StatisticsView jobsByLocation={(result as StatisticsViewProps).jobsByLocation} allEmployees={(result as StatisticsViewProps).allEmployees} />
+        <StatisticsView locationsOfJobs={(result as StatisticsViewProps).locationsOfJobs} jobs={(result as StatisticsViewProps).jobs} allEmployees={(result as StatisticsViewProps).allEmployees} />
     )
 }

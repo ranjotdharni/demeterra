@@ -93,8 +93,10 @@ export function parseRawJobSummaries(raws: RawJobSummary[]): JobSummary[] {
 }
 
 export function groupJobSummariesByDate(jobSummaries: JobSummary[]): DateGroupedJobSummaries[] {
+    console.log()
+
     const grouped = jobSummaries.reduce((acc, jobSummary) => {
-        const dateKey = jobSummary.job.dateOf.toISOString().split('T')[0] // format to 'YYYY-MM-DD'
+        const dateKey = jobSummary.job.dateOf.toISOString().slice(0, 19) // format to 'YYYY-MM-DD hh:mm:ss'
         if (!acc[dateKey]) {
             acc[dateKey] = []
         }

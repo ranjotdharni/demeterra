@@ -3,17 +3,16 @@
 import { DateGroupedJobSummaries, Employee, JobSummary, Location } from "@/lib/types/db"
 import { v4 as uuidv4 } from "uuid"
 import StatisticsGroup from "./StatisticsGroup"
-import { MouseEvent, useState } from "react"
-import { arrayToTriplets, calculateStatistics, deepCopyDateGroupedJobSummariesArray, duplicateDateGroupedJobSummaries } from "@/lib/utils/general"
+import { ChangeEvent, MouseEvent, useState } from "react"
+import { arrayToTriplets, calculateStatistics, dateToFormat, deepCopyDateGroupedJobSummariesArray, duplicateDateGroupedJobSummaries, parseLocalDateFromInputValue } from "@/lib/utils/general"
 import { EmployeeStatistics, SummaryStatistics } from "@/lib/types/general"
 import Loader from "../utils/Loader"
 import { DEFAULT_RIDE_COST, DEFAULT_WAGE } from "@/lib/constants/client"
+import { X } from "lucide-react"
 
 export interface StatisticsViewProps {
-    jobsByLocation: {
-        locationOfJobs: Location
-        jobsAtLocation: DateGroupedJobSummaries[]
-    }[]
+    locationsOfJobs: Location[]
+    jobs: DateGroupedJobSummaries[]
     allEmployees: Employee[]
 }
 
@@ -41,17 +40,14 @@ function EmployeeStatisticsRow({ data } : { data: EmployeeStatistics[] }) {
     )
 }
 
-export default function JobView({ jobsByLocation, allEmployees } : StatisticsViewProps) {
-    const rawData = jobsByLocation.map(jbl => deepCopyDateGroupedJobSummariesArray(jbl.jobsAtLocation))
-    let data: DateGroupedJobSummaries[] = []
-
-    rawData.forEach(item => {
-        data = [...data, ...item]
-    })
-
-    const [locations, setLocations] = useState<Location[]>(jobsByLocation.map(jbl => jbl.locationOfJobs))
-    const [jobGroupsHardCopy, setJobGroupsHardCopy] = useState<DateGroupedJobSummaries[]>(deepCopyDateGroupedJobSummariesArray(data))
-    const [jobGroups, setJobGroups] = useState<DateGroupedJobSummaries[]>(deepCopyDateGroupedJobSummariesArray(data))
+export default function StatisticsView({ locationsOfJobs, jobs, allEmployees } : StatisticsViewProps) {
+    const [locations, setLocations] = useState<string[]>([])
+    const [filteredLocations, setFilteredLocations] = useState<string[]>(locationsOfJobs.map(l => l.locationId))
+    const [currentSelection, setCurrentSelection] = useState<string | undefined>(filteredLocations.length === 0 ? undefined : filteredLocations[0])
+    const [from, setFrom] = useState<Date>()
+    const [to, setTo] = useState<Date>()
+    const [jobGroupsHardCopy, setJobGroupsHardCopy] = useState<DateGroupedJobSummaries[]>(deepCopyDateGroupedJobSummariesArray(jobs))
+    const [jobGroups, setJobGroups] = useState<DateGroupedJobSummaries[]>(deepCopyDateGroupedJobSummariesArray(jobs))
     const [employees, setEmployees] = useState<Employee[]>(allEmployees)
     const [loader, setLoader] = useState<boolean>(false)
 
@@ -61,6 +57,43 @@ export default function JobView({ jobsByLocation, allEmployees } : StatisticsVie
     const [deletedSummaries, setDeletedSummaries] = useState<JobSummary[]>([])
 
     const statistics: SummaryStatistics = calculateStatistics([...jobGroups, ...addedGroups, ...modifiedGroups])
+
+    function editCurrentSelection(event: ChangeEvent<HTMLSelectElement>) {
+        event.preventDefault()
+        setCurrentSelection(event.target.value)
+    }
+
+    function addCurrentSelection(event: MouseEvent<HTMLButtonElement>) {
+        if (!currentSelection)
+            return
+
+        event.preventDefault()
+        setLocations([...locations, currentSelection])
+        const newFilteredLocations = filteredLocations.filter(loc => loc !== currentSelection)
+        setFilteredLocations(newFilteredLocations)
+        setCurrentSelection(newFilteredLocations.length === 0 ? undefined : newFilteredLocations[0])
+    }
+
+    function generateRemoveLocationMethod(removeLocationId: string): (event: MouseEvent<HTMLButtonElement>) => void {
+        return (event: MouseEvent<HTMLButtonElement>) => {
+            event.preventDefault()
+
+            const newLocations = [...locations]
+            const removeIndex: number = newLocations.indexOf(removeLocationId)
+
+            if (removeIndex === -1)
+                return
+
+            const newFilteredLocations: string[] = [...filteredLocations, newLocations[removeIndex]]
+
+            if (currentSelection === undefined)
+                setCurrentSelection(newLocations[removeIndex])
+
+            newLocations.splice(removeIndex, 1)
+            setLocations(newLocations)
+            setFilteredLocations(newFilteredLocations)
+        }
+    }
 
     function addGroup() {
         const updatedAddedGroups: DateGroupedJobSummaries[] = [
@@ -370,7 +403,23 @@ export default function JobView({ jobsByLocation, allEmployees } : StatisticsVie
         setModifiedGroups([])
         setDeletedGroups([])
         setDeletedSummaries([])
-        setJobGroups(deepCopyDateGroupedJobSummariesArray(jobGroupsHardCopy))
+        setJobGroups(jobGroupsHardCopy)
+    }
+
+    function clearFilters(event: MouseEvent<HTMLButtonElement>) {
+        event.preventDefault()
+        setLocations([])
+        const resetFilter: string[] = locationsOfJobs.map(l => l.locationId)
+        setFilteredLocations(resetFilter)
+        setCurrentSelection(resetFilter.length === 0 ? undefined : resetFilter[0])
+        setFrom(undefined)
+        setTo(undefined)
+    }
+
+    async function applyFilters(event: MouseEvent<HTMLButtonElement>) {
+        event.preventDefault()
+
+
     }
 
     // Uncomment this block for testing in the console
@@ -394,8 +443,65 @@ export default function JobView({ jobsByLocation, allEmployees } : StatisticsVie
             <header className="border-b-2 border-light-grey py-1 px-2 inline-flex flex-row space-x-2" style={{width: "fit-content"}}>
                 <h1 className="text-4xl text-green">Statistics</h1>
                 <button onClick={addGroup} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Add Group</button>
-                <button onClick={undoChanges} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Cancel</button>
+                <button onClick={undoChanges} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Undo Group Changes</button>
+                <button onClick={clearFilters} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Clear Filters</button>
+                <button className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Apply Filters</button>
             </header>
+
+            <div className="py-1 px-2 w-auto inline-flex flex-col">
+                <div className="w-auto space-x-2 flex flex-row">
+                    <h2 className="text-2xl">Select Locations</h2>
+                    <select className="outline-none" disabled={filteredLocations.length === 0} value={currentSelection ? currentSelection : ""} onChange={editCurrentSelection}>
+                        {
+                            filteredLocations.map((location, index) => {
+                                return <option key={`ADD_LOCATION_SELECT_${location}`} value={location}>{locationsOfJobs.find(l => l.locationId === location)?.name}</option>
+                            })
+                        }
+                    </select>
+                    <button className="px-3 bg-light-grey rounded-md hover:cursor-pointer" onClick={addCurrentSelection}>Add</button>
+                </div>
+                <ul className="w-auto flex flex-row p-2 space-x-2">
+                    {
+                        locations.map(locId => {
+                            const name: string | undefined = locationsOfJobs.find(l => l.locationId === locId)?.name
+                            return (
+                                <li key={`ADDED_LOCATION_LIST_${locId}`} className="p-1 space-x-2 border border-light-grey flex flex-row items-center">
+                                    <p>{name}</p>
+                                    <button className="h-3/4 aspect-square hover:text-red-800 hover:cursor-pointer" onClick={generateRemoveLocationMethod(locId)}>
+                                        <X className="w-full h-full" />
+                                    </button>
+                                </li>
+                            )
+                        })
+                    }
+                </ul>
+            </div>
+
+            <div className="py-1 px-2 space-x-2 flex flex-row items-center">
+                {
+                    from ?
+                    <>
+                        <label>From:</label>
+                        <input type="date" value={dateToFormat("YYYY-MM-DD", from ? new Date(from) : new Date())} onChange={e => { setFrom(parseLocalDateFromInputValue(e.target.value)) }} />
+                        <button className="h-4 aspect-square hover:text-red-800 hover:cursor-pointer" onClick={() => { setFrom(undefined) }}>
+                            <X className="w-full h-full" />
+                        </button>
+                    </> : 
+                    <button onClick={() => { setFrom(new Date()) }} className="px-3 bg-light-grey rounded-md hover:cursor-pointer">Add From</button>
+                }
+
+                {
+                    to ?
+                    <>
+                        <label>To:</label>
+                        <input type="date" value={dateToFormat("YYYY-MM-DD", to ? new Date(to) : new Date())} onChange={e => { setTo(parseLocalDateFromInputValue(e.target.value)) }} />
+                        <button className="h-4 aspect-square hover:text-red-800 hover:cursor-pointer" onClick={() => { setTo(undefined) }}>
+                            <X className="w-full h-full" />
+                        </button>
+                    </> : 
+                    <button onClick={() => { setTo(new Date()) }} className="px-3 bg-light-grey rounded-md hover:cursor-pointer">Add To</button>
+                }
+            </div>
 
             <div className="p-4 w-auto h-auto inline-flex flex-col space-y-4">
                 <h2 className="text-2xl border-2 rounded-md border-light-grey px-1" style={{width: "fit-content"}}>Statistics</h2>

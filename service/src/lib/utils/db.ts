@@ -69,15 +69,9 @@ export async function fetchStatisticsViewProps(locations?: string[], from?: Date
     if ((employees as GenericError).error)
         return { error: true, message: "Could not retrieve Employees" }
 
-    const data = locationsData.map((location: Location) => {
-        return {
-            locationOfJobs: location,
-            jobsAtLocation: jobs.filter(job => job.summaries[0].location.locationId === location.locationId)
-        }
-    })
-
     return {
-        jobsByLocation: data,
+        locationsOfJobs: locationsData,
+        jobs: jobs,
         allEmployees: employees as Employee[]
     }
 }
