@@ -25,7 +25,7 @@ export function dateToSQLDate(date: Date | string): string {
 // returns a date that is the input date but with its time value set to the end of that day
 export function dateToEndOfDay(input: Date): Date {
     const result: Date = new Date(input)
-    result.setHours(23, 59, 59, 999)
+    result.setUTCHours(23, 59, 59, 999)
     return result
 }
 

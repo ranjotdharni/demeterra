@@ -1,6 +1,6 @@
 "use client"
 
-import { Employee, Location, JobSummary, Job as JobType, DateGroupedJobSummaries } from "@/lib/types/db"
+import { Employee, Location, JobSummary, Job as JobType } from "@/lib/types/db"
 import { v4 as uuidv4 } from "uuid"
 import Job from "./Job"
 import { ChangeEvent, MouseEvent, useEffect, useState } from "react"
