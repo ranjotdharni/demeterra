@@ -494,7 +494,7 @@ export async function dbGetNotes(): Promise<GenericError | Note[]> {
     const conn = await createConnection(dbConfig)
 
     try {
-        let query: string = "SELECT * FROM Note"
+        let query: string = "SELECT * FROM Note ORDER BY dateOf ASC"
         let response: [Note[], FieldPacket[]] | QueryError = await conn.execute<Note[]>(query)
 
         if (((response as unknown) as QueryError).code !== undefined) {
@@ -510,12 +510,13 @@ export async function dbGetNotes(): Promise<GenericError | Note[]> {
     }
 }
 
-export async function dbCreateNote(content: string, dateOf: Date): Promise<GenericError | GenericSuccess> {
+export async function dbCreateNote(content: string, dateOf: Date): Promise<GenericError | Note> {
     const conn = await createConnection(dbConfig)
+    const id: string = uuidv4()
 
     try {
         let query: string = "INSERT INTO Note (noteId, content, dateOf) VALUES (?, ?, ?)"
-        let params: (string | number)[] = [uuidv4(), content, dateToSQLDate(dateOf)]
+        let params: (string | number)[] = [id, content, dateToSQLDate(dateOf)]
         let response: [QueryResult, FieldPacket[]] | QueryError = await conn.execute<QueryResult>(query, params)
 
         if (((response as unknown) as QueryError).code !== undefined) {
@@ -523,7 +524,14 @@ export async function dbCreateNote(content: string, dateOf: Date): Promise<Gener
             return newError("Failed to Create Note(s)")
         }
 
-        return newSuccess("Note(s) Created Successfully")
+        return {
+            constructor: {
+                name: "RowDataPacket"
+            },
+            noteId: id,
+            content: content,
+            dateOf: dateOf
+        }
     }
     catch (error) {
         console.log(error)

@@ -2,6 +2,7 @@ import { dbCreateNote, dbDeleteNote, dbEditNote } from "@/db/actions"
 import { GenericError, GenericSuccess } from "@/lib/types/general"
 import { NextRequest, NextResponse } from "next/server"
 import { newError } from "@/lib/utils/general"
+import { Note } from "@/lib/types/db"
 
 export async function POST(request: NextRequest) {
     if (request.method !== "POST")
@@ -12,12 +13,12 @@ export async function POST(request: NextRequest) {
     if (!data.content)
         return NextResponse.json(newError("MALFORMED REQUEST"), { status: 400 })
 
-    const response: GenericSuccess | GenericError = await dbCreateNote(data.content, new Date())
+    const response: Note | GenericError = await dbCreateNote(data.content, new Date())
 
     if ((response as GenericError).error) 
         return NextResponse.json(response as GenericError, { status: 500 })
 
-    return NextResponse.json(response as GenericSuccess, { status: 200 })
+    return NextResponse.json(response as Note, { status: 200 })
 }
 
 export async function PUT(request: NextRequest) {
