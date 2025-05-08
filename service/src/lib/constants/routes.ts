@@ -5,6 +5,7 @@ export const API_LOCATION: string = "/api/location"
 export const API_LOGOUT: string = "/api/logout"
 export const API_LOGIN: string = "/api/login"
 export const API_EDIT: string = "/api/edit"
+export const API_NOTE: string = "/api/note"
 
 export const PAGE_LOCATION: string = "/location"
 export const PAGE_EMPLOYEE: string = "/employee"

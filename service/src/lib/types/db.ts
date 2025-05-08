@@ -18,6 +18,12 @@ export interface Employee extends RowDataPacket {
     dateCreated: Date
 }
 
+export interface Note extends RowDataPacket {
+    noteId: string
+    content: string
+    dateOf: Date
+}
+
 export interface Job extends RowDataPacket {
     jobId: string
     locationId: string

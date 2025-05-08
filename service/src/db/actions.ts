@@ -1,6 +1,6 @@
 import { Connection, createConnection, FieldPacket, QueryError, QueryResult, ResultSetHeader } from "mysql2/promise"
 import { GenericError, GenericSuccess } from "@/lib/types/general"
-import { Session, Location, Employee, Job, JobSummary, RawJobSummary } from "@/lib/types/db"
+import { Session, Location, Employee, Job, JobSummary, RawJobSummary, Note } from "@/lib/types/db"
 import { newError, newSuccess, parseRawJobSummaries } from "@/lib/utils/general"
 import { dateToEndOfDay, dateToSQLDate } from "@/lib/utils/db"
 import { v4 as uuidv4 } from "uuid"
@@ -486,5 +486,89 @@ export async function dbAddModifyRemoveJobs(add: Job[], modify: Job[], remove: J
     catch (error) {
         console.log(error)
         return newError("INTERNAL SERVER ERROR")
+    }
+}
+
+// Notes
+export async function dbGetNotes(): Promise<GenericError | Note[]> {
+    const conn = await createConnection(dbConfig)
+
+    try {
+        let query: string = "SELECT * FROM Note"
+        let response: [Note[], FieldPacket[]] | QueryError = await conn.execute<Note[]>(query)
+
+        if (((response as unknown) as QueryError).code !== undefined) {
+            console.log(response)
+            return newError("Failed to Get Note(s)")
+        }
+
+        return (response as [Note[], FieldPacket[]])[0]
+    }
+    catch (error) {
+        console.log(error)
+        return newError("Failed to Get Note(s)")
+    }
+}
+
+export async function dbCreateNote(content: string, dateOf: Date): Promise<GenericError | GenericSuccess> {
+    const conn = await createConnection(dbConfig)
+
+    try {
+        let query: string = "INSERT INTO Note (noteId, content, dateOf) VALUES (?, ?, ?)"
+        let params: (string | number)[] = [uuidv4(), content, dateToSQLDate(dateOf)]
+        let response: [QueryResult, FieldPacket[]] | QueryError = await conn.execute<QueryResult>(query, params)
+
+        if (((response as unknown) as QueryError).code !== undefined) {
+            console.log(response)
+            return newError("Failed to Create Note(s)")
+        }
+
+        return newSuccess("Note(s) Created Successfully")
+    }
+    catch (error) {
+        console.log(error)
+        return newError("Failed to Create Note(s)")
+    }
+}
+
+export async function dbEditNote(id: string, content: string): Promise<GenericError | GenericSuccess> {
+    const conn = await createConnection(dbConfig)
+
+    try {
+        let query: string = "UPDATE Note SET content = ? WHERE noteId = ?"
+        let params: (string | number)[] = [content, id]
+        let response: [QueryResult, FieldPacket[]] | QueryError = await conn.execute<Note[]>(query, params)
+
+        if (((response as unknown) as QueryError).code !== undefined) {
+            console.log(response)
+            return newError("Failed to Update Note(s)")
+        }
+
+        return newSuccess("Note(s) Updated successfully")
+    }
+    catch (error) {
+        console.log(error)
+        return newError("Failed to Update Note(s)")
+    }
+}
+
+export async function dbDeleteNote(id: string): Promise<GenericSuccess | GenericError> {
+    const conn = await createConnection(dbConfig)
+
+    try {
+        let query: string = "DELETE FROM Note WHERE noteId = ?"
+        let params: (string | number)[] = [id]
+        let response: [QueryResult, FieldPacket[]] | QueryError = await conn.execute<Note[]>(query, params)
+
+        if (((response as unknown) as QueryError).code !== undefined) {
+            console.log(response)
+            return newError("Failed to Delete Note(s)")
+        }
+
+        return newSuccess("Note(s) Deleted successfully")
+    }
+    catch (error) {
+        console.log(error)
+        return newError("Failed to Delete Note(s)")
     }
 }
