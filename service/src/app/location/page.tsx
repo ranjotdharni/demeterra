@@ -51,7 +51,7 @@ export default function Page() {
     return (
         <section className="p-4">
             <header className="w-auto h-auto py-4 space-x-4 flex flex-row items-center border-b border-light-grey">
-                <h1 className="text-5xl">Locations</h1>
+                <h1 className="text-5xl text-green">Locations</h1>
                 <input value={newLocation} onChange={(e) => {setNewLocation(e.target.value)}} placeholder="Enter name..." className="w-50 p-1 bg-light-grey text-black" />
                 <button onClick={() => addLocation()} className="p-1 border border-light-grey rounded hover:cursor-pointer">Add Location</button>
             </header>
@@ -68,7 +68,6 @@ export default function Page() {
                                 <li key={location.locationId} className="w-auto h-auto px-4 py-2 border border-light-grey rounded-lg flex flex-row items-center space-x-2">
                                     <h2 className="text-2xl">{location.name}</h2>
                                     <a href={`${PAGE_JOB}/${location.locationId}`} className="hover:cursor-pointer py-1 px-4 text-foreground border border-light-grey rounded-lg">View</a>
-                                    <button className="hover:cursor-pointer py-1 px-4 text-foreground border border-light-grey rounded-lg">Delete</button>
                                 </li>
                             )
                         })

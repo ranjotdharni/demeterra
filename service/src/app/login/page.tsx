@@ -4,6 +4,7 @@ import { API_LOGIN, PAGE_HOME } from "@/lib/constants/routes"
 import { ChangeEvent, FormEvent, useState } from "react"
 import { useRouter } from "next/navigation"
 import Loader from "../components/utils/Loader"
+import { LOGO } from "@/lib/constants/client"
 
 export default function Page() {
     const router = useRouter()
@@ -66,8 +67,13 @@ export default function Page() {
     }
 
     return (
-        <section className="p-8 w-screen h-screen flex flex-col justify-center items-center">
-            <form onSubmit={onSubmit} className="w-auto h-auto p-8 border border-light-grey shadow-xl flex flex-col justify-start items-end space-y-8">
+        <section className="w-full h-screen flex flex-col justify-center items-center">
+            <header className="fixed top-0 left-0 flex flex-row justify-start items-center px-4 m-4 border rounded">
+                <img className="h-full aspect-square" src={LOGO} />
+                <h1 className="text-4xl text-green">Demeterra</h1>
+            </header>
+
+            <form onSubmit={onSubmit} className="w-auto h-auto px-8 py-10 border border-light-grey shadow-xl flex flex-col justify-start items-end space-y-8">
                 <input value={username} onChange={editUsername} placeholder="Enter Username" className="w-auto bg-gray-400 text-black px-2" />
                 <input type="password" value={serviceKey} onChange={editServiceKey} placeholder="Enter Service Key" className="w-auto bg-gray-400 text-black px-2" />
                 {

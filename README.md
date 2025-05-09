@@ -6,9 +6,9 @@ Web app to help manage employee hours.
 - [x] Copy Groups
 - [x] Nav Bar
 - [x] Loader
-- [ ] Error Modal
 - [x] Statistics
-- [ ] Notes
+- [x] Notes
+- [ ] Error Modal
 
 ## Notes
 - Setting environment TZ variable to UTC unifies all dates since database already stores in UTC and the TZ=UTC variable sets the server to UTC as well, this takes care of cookie expiration times as well. No conversions neccessary.

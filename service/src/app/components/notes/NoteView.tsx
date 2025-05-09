@@ -52,7 +52,8 @@ export default function NoteView({ initial } : { initial: NoteType[] }) {
             return
 
         let newNotes = [...notes]
-        newNotes[updateIndex].content = content
+        let newNote = {...newNotes[updateIndex], content: content}
+        newNotes[updateIndex] = newNote
         setNotes(newNotes)
     }
 
@@ -68,23 +69,23 @@ export default function NoteView({ initial } : { initial: NoteType[] }) {
     }
 
     return (
-        <section>
-            <h1>Notes</h1>
+        <section className="p-8">
+            <h1 className="p-2 text-4xl text-green border-b border-white w-auto">Notes</h1>
             {
                 loader ? 
                 <div className="w-full h-60 flex flex-col justify-end items-center">
                     <Loader />
                 </div> :
-                <div>
-                    <button onClick={createNote}>Create</button>
-                    <input type="textarea" value={createInput} onChange={event => { setCreateInput(event.target.value) }} />
+                <div className="space-y-2 p-2 flex flex-col items-end border-b">
+                    <textarea className="w-full min-h-40 p-2 bg-yellow-100 text-black rounded outline-none" placeholder="Create a Note..." value={createInput} onChange={event => { setCreateInput(event.target.value) }} />
+                    <button onClick={createNote} className="px-2 bg-light-grey rounded-md hover:cursor-pointer">Create</button>
                 </div>
             }
 
             <ul>
                 {
                     notes.map(note => {
-                        return <Note note={note} updateNote={updateNote} removeNote={removeNote} />
+                        return <Note key={note.noteId} note={note} updateNote={updateNote} removeNote={removeNote} />
                     })
                 }
             </ul>

@@ -9,6 +9,7 @@ import Loader from "../utils/Loader"
 import { DEFAULT_RIDE_COST, DEFAULT_WAGE } from "@/lib/constants/client"
 import { X } from "lucide-react"
 import { API_STATISTICS } from "@/lib/constants/routes"
+import { useSearchParams } from "next/navigation"
 
 export interface StatisticsViewProps {
     locationsOfJobs: Location[]
@@ -16,14 +17,14 @@ export interface StatisticsViewProps {
     allEmployees: Employee[]
 }
 
-function EmployeeStatisticsRow({ data } : { data: EmployeeStatistics[] }) {
+function EmployeeStatisticsRow({ data, highlight } : { data: EmployeeStatistics[], highlight: string | null }) {
     return (
         <li>
             <ul className="flex flex-row space-x-8">
                 {
                     data.map((stat, index) => {
                         return (
-                            <li key={`EMPLOYEE_STATISTIC_ITEM_${index}`}>
+                            <li key={`EMPLOYEE_STATISTIC_ITEM_${index}`} className="p-2" style={highlight !== null && highlight === stat.employee.employeeId ? {border: "solid 1px yellow"} : {}}>
                                 <p className="border-b border-light-grey text-green">{`${stat.employee.name}`}</p>
                                 <div className="flex flex-row space-x-2 p-1">
                                     <p className="border border-light-grey p-1 rounded">{`Hours: ${stat.hours}`}</p>
@@ -41,6 +42,8 @@ function EmployeeStatisticsRow({ data } : { data: EmployeeStatistics[] }) {
 }
 
 export default function StatisticsView({ locationsOfJobs, jobs, allEmployees } : StatisticsViewProps) {
+    const searchParams = useSearchParams()
+
     const [locations, setLocations] = useState<string[]>([])
     const [filteredLocations, setFilteredLocations] = useState<string[]>(locationsOfJobs.map(l => l.locationId))
     const [currentSelection, setCurrentSelection] = useState<string | undefined>(filteredLocations.length === 0 ? undefined : filteredLocations[0])
@@ -50,6 +53,7 @@ export default function StatisticsView({ locationsOfJobs, jobs, allEmployees } :
     const [jobGroups, setJobGroups] = useState<DateGroupedJobSummaries[]>(deepCopyDateGroupedJobSummariesArray(jobs))
     const [employees, setEmployees] = useState<Employee[]>(allEmployees)
     const [loader, setLoader] = useState<boolean>(false)
+    const [highlight, setHighlight] = useState(searchParams.get("h"))
 
     const [addedGroups, setAddedGroups] = useState<DateGroupedJobSummaries[]>([])
     const [modifiedGroups, setModifiedGroups] = useState<DateGroupedJobSummaries[]>([])
@@ -552,7 +556,7 @@ export default function StatisticsView({ locationsOfJobs, jobs, allEmployees } :
                     {
                         arrayToTriplets<EmployeeStatistics>(statistics.employeeEarnings).map((row, index) => {
                             return (
-                                <EmployeeStatisticsRow key={`EMPLOYEE_STATISTIC_ROW_${index}`} data={row} />
+                                <EmployeeStatisticsRow key={`EMPLOYEE_STATISTIC_ROW_${index}`} data={row} highlight={highlight} />
                             )
                         })
                     }

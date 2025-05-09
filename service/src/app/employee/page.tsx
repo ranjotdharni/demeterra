@@ -1,6 +1,6 @@
 "use client"
 
-import { API_EMPLOYEE, PAGE_EMPLOYEE } from "@/lib/constants/routes"
+import { API_EMPLOYEE, PAGE_STATISTICS } from "@/lib/constants/routes"
 import { useEffect, useState } from "react"
 import { Employee } from "@/lib/types/db"
 import Loader from "../components/utils/Loader"
@@ -51,7 +51,7 @@ export default function Page() {
     return (
         <section className="p-4">
             <header className="w-auto h-auto py-4 space-x-4 flex flex-row items-center border-b border-light-grey">
-                <h1 className="text-5xl">Employees</h1>
+                <h1 className="text-5xl text-green">Employees</h1>
                 <input value={newEmployee} onChange={(e) => {setNewEmployee(e.target.value)}} placeholder="Enter name..." className="w-50 p-1 bg-light-grey text-black" />
                 <button onClick={() => addEmployee()} className="p-1 border border-light-grey rounded hover:cursor-pointer">Add Employee</button>
             </header>
@@ -67,8 +67,7 @@ export default function Page() {
                             return (
                                 <li key={employee.employeeId} className="w-auto h-auto px-4 py-2 border border-light-grey rounded-lg flex flex-row items-center space-x-2">
                                     <h2 className="text-2xl">{employee.name}</h2>
-                                    <a href={`${PAGE_EMPLOYEE}/${employee.employeeId}`} className="hover:cursor-pointer py-1 px-4 text-foreground border border-light-grey rounded-lg">View</a>
-                                    <button className="hover:cursor-pointer py-1 px-4 text-foreground border border-light-grey rounded-lg">Delete</button>
+                                    <a href={`${PAGE_STATISTICS}?h=${employee.employeeId}`} className="hover:cursor-pointer py-1 px-4 text-foreground border border-light-grey rounded-lg">View</a>
                                 </li>
                             )
                         })

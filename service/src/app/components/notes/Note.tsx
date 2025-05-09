@@ -26,7 +26,7 @@ export default function Note({ note, updateNote, removeNote } : { note: NoteType
                 method: "PUT",
                 body: JSON.stringify({
                     id: note.noteId,
-                    content: note.content
+                    content: content
                 })
             }).then(middle => {
                 return middle.json()
@@ -35,7 +35,7 @@ export default function Note({ note, updateNote, removeNote } : { note: NoteType
                     console.log((result as GenericError).message)
                 }
                 else {
-                    updateNote(note.noteId, note.content)
+                    updateNote(note.noteId, content)
                 }
             })
         }
@@ -76,7 +76,7 @@ export default function Note({ note, updateNote, removeNote } : { note: NoteType
     }
 
     return (
-        <li className="w-full h-auto p-2 space-x-2">
+        <li className="w-full h-auto p-2 space-x-2 space-y-2">
             {
                 loader ? 
                 <div className="w-full h-60 flex flex-col justify-end items-center">
@@ -88,7 +88,7 @@ export default function Note({ note, updateNote, removeNote } : { note: NoteType
                     <button className="px-2 bg-light-grey rounded-md hover:cursor-pointer" onClick={deleteNote}>Delete</button>
                     <button className="px-2 bg-light-grey rounded-md hover:cursor-pointer" onClick={editNote}>Save</button>
                     
-                    <input className="w-full min-h-30 p-2" type="textarea" placeholder="Type a Note..." value={content} onChange={event => { setContent(event.target.value) }} />
+                    <textarea className="w-full min-h-40 p-2 bg-yellow-100 text-black rounded outline-none" placeholder="Type a Note..." value={content} onChange={event => { setContent(event.target.value) }} />
                 </>
             }
         </li>
