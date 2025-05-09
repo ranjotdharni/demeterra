@@ -2,6 +2,7 @@ import { GenericError } from "@/lib/types/general"
 import NotFound from "@/app/404"
 import { fetchStatisticsViewProps } from "@/lib/utils/db"
 import StatisticsView, { StatisticsViewProps } from "../components/statistics/StatisticsView"
+import { Suspense } from "react"
 
 export default async function Page() {
     const result: GenericError | StatisticsViewProps = await fetchStatisticsViewProps()
@@ -10,6 +11,8 @@ export default async function Page() {
         return <NotFound message={(result as GenericError).message} />
 
     return (
-        <StatisticsView locationsOfJobs={(result as StatisticsViewProps).locationsOfJobs} jobs={(result as StatisticsViewProps).jobs} allEmployees={(result as StatisticsViewProps).allEmployees} />
+        <Suspense>
+            <StatisticsView locationsOfJobs={(result as StatisticsViewProps).locationsOfJobs} jobs={(result as StatisticsViewProps).jobs} allEmployees={(result as StatisticsViewProps).allEmployees} />
+        </Suspense>
     )
 }
